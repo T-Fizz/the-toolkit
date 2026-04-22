@@ -20,12 +20,13 @@ const PANTRY = {
   "Cheeses — Alpine & Nutty": ["Comté 18-Month", "Gruyère"],
   "Cheeses — Classic Melters": ["Raclette", "Low-moisture Mozzarella", "Provolone", "Havarti", "Monterey Jack"],
   "Cheeses — Mild & Sweet": ["Honey Gouda", "Standard Gouda", "Brie"],
-  "Cheeses — Flavored & Specialty": ["Red Dragon (ale + mustard seed)", "Pepper Jack", "Goat Cheese", "Gorgonzola"],
+  "Cheeses — Flavored & Specialty": ["Red Dragon (ale + mustard seed)", "Pepper Jack", "Goat Cheese", "Gorgonzola", "Feta"],
   "Breads & Bases": ["Sandwich Rolls", "English Muffins", "Sliced Sandwich Bread", "Sourdough", "Ciabatta", "Brioche Buns", "Pretzel Rolls", "Baguette", "Croissants"],
-  "Sauces": ["Kinder's Roasted Garlic BBQ", "Marinara", "Red Hot", "Sriracha", "Ranch", "Mayo", "Ketchup", "Yellow Mustard"],
+  "Sauces": ["Kinder's Roasted Garlic BBQ", "Marinara", "Red Hot", "Sriracha", "Ranch", "Mayo", "Aioli (garlic mayo)", "Pesto (basil)", "Ketchup", "Yellow Mustard"],
+  "Fresh Veg & Greens": ["Tomato", "Arugula", "Lettuce", "Avocado", "Roasted Red Pepper", "Pickled Red Onion"],
   "MarketSpice Mustards": ["Chipotle Cerveza", "Hefeweizen Lemon & Garlic", "Stout Beer"],
   "Achars & Spreads": ["Hot Mango Achar", "Green Chili Achar", "Fig Jam (buy this!)", "Wildflower Honey"],
-  "Toppings": ["Lil Mama's Peppers", "French Fried Onions", "Pepperoni", "Dill Pickles", "Pickled Jalapeños", "Capers"],
+  "Toppings": ["Lil Mama's Peppers", "French Fried Onions", "Pepperoni", "Bacon", "Dill Pickles", "Pickled Jalapeños", "Capers"],
   "Protein": ["Rotisserie Chicken (×2)", "Eggs"],
 };
 
@@ -91,6 +92,7 @@ const BUILD_CATEGORIES = [
       { id: "pepper_jack", label: "Pepper Jack", group: "Flavored & Specialty" },
       { id: "goat_cheese", label: "Goat Cheese", group: "Flavored & Specialty" },
       { id: "gorgonzola", label: "Gorgonzola", group: "Flavored & Specialty" },
+      { id: "feta", label: "Feta", group: "Flavored & Specialty" },
     ],
   },
   {
@@ -98,17 +100,22 @@ const BUILD_CATEGORIES = [
     label: "Sauce / Spread",
     multi: true,
     items: [
-      { id: "bbq", label: "Kinder's BBQ" },
-      { id: "marinara", label: "Marinara" },
-      { id: "buffalo", label: "Buffalo (Red Hot + Butter)" },
-      { id: "hot_honey", label: "Hot Honey (Honey + Red Hot)" },
-      { id: "sriracha_mayo", label: "Sriracha Mayo" },
-      { id: "fig_jam", label: "Fig Jam" },
-      { id: "mango_achar", label: "Hot Mango Achar" },
-      { id: "green_chili_achar", label: "Green Chili Achar" },
-      { id: "ranch", label: "Ranch" },
-      { id: "mayo", label: "Mayo" },
-      { id: "no_sauce", label: "None (let cheese star)" },
+      // Leads
+      { id: "bbq", label: "Kinder's BBQ", group: "Lead" },
+      { id: "marinara", label: "Marinara", group: "Lead" },
+      { id: "buffalo", label: "Buffalo (Red Hot + Butter)", group: "Lead" },
+      { id: "hot_honey", label: "Hot Honey (Honey + Red Hot)", group: "Lead" },
+      { id: "fig_jam", label: "Fig Jam", group: "Lead" },
+      { id: "mango_achar", label: "Hot Mango Achar", group: "Lead" },
+      { id: "green_chili_achar", label: "Green Chili Achar", group: "Lead" },
+      { id: "pesto", label: "Pesto", group: "Lead" },
+      // Creamy
+      { id: "mayo", label: "Mayo", group: "Creamy" },
+      { id: "aioli", label: "Aioli (garlic mayo)", group: "Creamy" },
+      { id: "sriracha_mayo", label: "Sriracha Mayo", group: "Creamy" },
+      { id: "ranch", label: "Ranch", group: "Creamy" },
+      // None
+      { id: "no_sauce", label: "None (let cheese star)", group: "None" },
     ],
   },
   {
@@ -127,171 +134,211 @@ const BUILD_CATEGORIES = [
     label: "Toppings",
     multi: true,
     items: [
-      { id: "lil_mamas", label: "Lil Mama's Peppers" },
-      { id: "french_onions", label: "French Fried Onions" },
-      { id: "pepperoni", label: "Pepperoni" },
-      { id: "dill_pickles", label: "Dill Pickles" },
-      { id: "pickled_japs", label: "Pickled Jalapeños" },
-      { id: "capers", label: "Capers" },
-      { id: "egg", label: "Fried Egg" },
+      // Fresh Veg & Greens
+      { id: "tomato", label: "Tomato Slices", group: "Fresh Veg & Greens" },
+      { id: "arugula", label: "Arugula", group: "Fresh Veg & Greens" },
+      { id: "lettuce", label: "Lettuce", group: "Fresh Veg & Greens" },
+      { id: "avocado", label: "Avocado", group: "Fresh Veg & Greens" },
+      { id: "roasted_red_pepper", label: "Roasted Red Pepper", group: "Fresh Veg & Greens" },
+      // Pickled & Brined
+      { id: "lil_mamas", label: "Lil Mama's Peppers", group: "Pickled & Brined" },
+      { id: "pickled_red_onion", label: "Pickled Red Onion", group: "Pickled & Brined" },
+      { id: "french_onions", label: "French Fried Onions", group: "Pickled & Brined" },
+      { id: "dill_pickles", label: "Dill Pickles", group: "Pickled & Brined" },
+      { id: "pickled_japs", label: "Pickled Jalapeños", group: "Pickled & Brined" },
+      { id: "capers", label: "Capers", group: "Pickled & Brined" },
+      // Meat
+      { id: "pepperoni", label: "Pepperoni", group: "Meat" },
+      { id: "bacon", label: "Bacon", group: "Meat" },
+      // Egg
+      { id: "egg", label: "Fried Egg", group: "Egg" },
     ],
   },
 ];
 
 /*
- * CLASHES — food-theory rules. Each entry: "category:item" → [items it blocks].
- * Entries are symmetric: if A blocks B, B blocks A (so either pick order works).
+ * CLASHES — food-theory rules (research-backed: Flavor Bible, Food52, Serious Eats,
+ * cheese authority guides, Nashville + Korean chicken-sandwich traditions).
+ * Each entry: "category:item" → [items it blocks]. Symmetric: A blocks B iff B blocks A.
  *
- * Principles encoded:
+ * Principles:
  *  1. One lead sauce per sandwich (leads block leads).
- *  2. Creamy binders compose with leads where profiles agree; block each other.
- *  3. Strong/aged cheeses (Beecher's, Dubliner) don't get drowned in heavy sauce.
- *  4. Pre-sweet cheese (honey gouda) doesn't stack with sweet sauces.
- *  5. Pepperoni lives in marinara/BBQ country; nowhere else.
- *  6. Capers need clean, bright backdrops — no sweet/smoky/heavy sauces.
- *  7. Fried egg → muffin only; only mild savory backdrop.
- *  8. Each mustard has a profile: chipotle=BBQ, lemon=bright/cheese, stout=dark/savory.
- *  9. Selecting "None" in a category blocks all real options in that category.
+ *  2. Creamy binders block each other; each pairs only with leads whose profile matches.
+ *  3. Aged/strong cheeses don't get drowned in heavy wet sauces.
+ *  4. Pre-sweet cheese (honey gouda) doesn't stack with sweet/sweet-smoky sauces (incl. BBQ).
+ *  5. Pepperoni → marinara/BBQ country only.
+ *  6. Capers need clean/bright backdrops.
+ *  7. Fried egg on breakfast-compatible bases only (blocks ciabatta/baguette/pretzel).
+ *  8. Each mustard has a flavor lane (chipotle=BBQ/achar, lemon garlic=bright, stout=dark savory).
+ *  9. Selecting "None" blocks every real option in that category.
+ * 10. Pesto = Italian herb lead — mozz/goat cheese/tomato/arugula; fights BBQ/aged-British/Asian.
+ * 11. Aioli = garlic-mayo Mediterranean lane — blocks other creamies and bold American leads.
+ * 12. Bread structure: open-crumb (ciabatta) and crispy-shell (baguette) can't hold wet hot sauce.
+ * 13. Cuisine coherence: feta rejects American/Asian sauces; parmigiano rejects non-Italian.
  */
 const CLASHES = {
-  // ── BASE ── bread profiles constrain the sauce/topping palette
+  // ── BASE ──
   "base:roll": [],
-  "base:sandwich_bread": ["sauce:buffalo"],                                                            // sliced loaf falls apart under wet hot sauce
-  "base:sourdough": [],                                                                                 // universal
-  "base:ciabatta": ["topping:egg"],                                                                    // open crumb lets a fried egg fall through
-  "base:brioche_bun": ["topping:capers"],                                                              // rich sweet bun vs briny capers = muddled
-  "base:pretzel_roll": ["sauce:marinara", "sauce:sriracha_mayo", "topping:egg"],                      // pretzel wants beer+mustard, not Italian/cream
-  "base:baguette": ["sauce:bbq", "sauce:buffalo", "topping:egg"],                                     // too crispy/delicate for wet American sauces or egg
-  "base:croissant": [                                                                                 // buttery pastry = brunch only
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar",
+  "base:sandwich_bread": ["sauce:buffalo"],
+  "base:sourdough": [],
+  "base:ciabatta": ["sauce:buffalo", "topping:egg"],
+  "base:brioche_bun": ["sauce:buffalo", "topping:capers"],
+  "base:pretzel_roll": ["sauce:marinara", "sauce:pesto", "topping:egg"],
+  "base:baguette": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "topping:egg"],
+  "base:croissant": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto",
     "topping:pepperoni", "topping:capers",
   ],
   "base:muffin": [],
 
   // ── CHEESE ──
-  // Aged & Sharp: don't drown
-  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
-  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
-  "cheese:sharp_cheddar": [],                                                                         // American workhorse, versatile
-  "cheese:aged_gouda": ["sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar"],                // pairs with bbq/hot honey/fig (sweet-aged)
-  "cheese:manchego": ["sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar"],                       // Spanish — fig jam + lemon mustard zone
-  "cheese:parmigiano": [                                                                              // salty/sharp — marinara is the classic pairing, block everything else heavy
+  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto"],
+  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto"],
+  "cheese:sharp_cheddar": ["sauce:pesto"],
+  "cheese:aged_gouda": ["sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto"],
+  "cheese:manchego": ["sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar"],
+  "cheese:parmigiano": [
     "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "sauce:sriracha_mayo", "sauce:ranch",
+    "topping:avocado",
   ],
-  // Alpine & Nutty: permissive
   "cheese:comte": [],
   "cheese:gruyere": [],
-  // Classic Melters: mostly permissive
   "cheese:raclette": [],
-  "cheese:mozzarella": ["sauce:bbq", "sauce:buffalo"],                                                // mozz wants marinara/pesto country
+  "cheese:mozzarella": ["sauce:bbq", "sauce:buffalo"],
   "cheese:provolone": [],
   "cheese:havarti": [],
   "cheese:monterey_jack": [],
-  // Mild & Sweet
-  "cheese:honey_gouda": ["sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar"],                    // pre-sweet — don't stack
+  "cheese:honey_gouda": [
+    "sauce:bbq", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:pesto",
+    "topping:tomato", "topping:arugula", "topping:roasted_red_pepper",
+  ],
   "cheese:std_gouda": [],
-  "cheese:brie": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "sauce:green_chili_achar", "topping:pepperoni"], // delicate creamy — no assault
-  // Flavored & Specialty
-  "cheese:red_dragon": [],                                                                            // ale+mustard notes already; flexible
-  "cheese:pepper_jack": ["sauce:buffalo", "sauce:green_chili_achar"],                                 // redundant heat
-  "cheese:goat_cheese": ["sauce:bbq", "sauce:buffalo", "topping:pepperoni"],                          // tangy — wants fig jam / capers territory
-  "cheese:gorgonzola": ["sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:green_chili_achar"], // blue funk wants fig jam / pear-style
+  "cheese:brie": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "sauce:green_chili_achar", "topping:pepperoni"],
+  "cheese:red_dragon": ["sauce:pesto"],
+  "cheese:pepper_jack": ["sauce:buffalo", "sauce:green_chili_achar"],
+  "cheese:goat_cheese": ["sauce:bbq", "sauce:buffalo", "topping:pepperoni"],
+  "cheese:gorgonzola": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto",
+    "topping:avocado",
+  ],
+  "cheese:feta": [                                                                                    // Greek/Mediterranean brined — cuisine coherence
+    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
+    "sauce:ranch", "sauce:sriracha_mayo",
+    "topping:pepperoni",
+    "mustard:chipotle_cerveza", "mustard:stout_beer",
+  ],
 
-  // ── SAUCES — leads block leads + unsuitable cheeses/bases/toppings ──
+  // ── SAUCES ──
   "sauce:bbq": [
-    "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "cheese:beechers", "cheese:dubliner", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:goat_cheese", "cheese:gorgonzola",
-    "topping:capers", "topping:egg",
+    "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:aioli",
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:goat_cheese", "cheese:gorgonzola", "cheese:honey_gouda", "cheese:feta",
+    "topping:capers", "topping:egg", "topping:arugula", "topping:roasted_red_pepper",
     "mustard:lemon_garlic", "mustard:stout_beer",
     "base:baguette", "base:croissant",
   ],
   "sauce:marinara": [
-    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",                                                             // Italian profile ≠ American ranch / Asian sriracha mayo
+    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch",
     "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:brie", "cheese:gorgonzola",
     "topping:capers", "topping:french_onions", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer", "mustard:chipotle_cerveza",
-    "base:pretzel_roll", "base:croissant",
+    "base:pretzel_roll", "base:croissant", "base:baguette",
   ],
   "sauce:buffalo": [
-    "sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:mayo", "sauce:sriracha_mayo",
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:pepper_jack", "cheese:goat_cheese",
-    "topping:capers", "topping:pepperoni", "topping:egg", "topping:lil_mamas",
+    "sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:aioli",
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:pepper_jack", "cheese:goat_cheese", "cheese:gorgonzola", "cheese:feta",
+    "topping:capers", "topping:pepperoni", "topping:egg", "topping:lil_mamas", "topping:tomato", "topping:arugula", "topping:roasted_red_pepper",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
-    "base:sandwich_bread", "base:baguette", "base:croissant",
+    "base:sandwich_bread", "base:ciabatta", "base:brioche_bun", "base:baguette", "base:croissant",
   ],
   "sauce:hot_honey": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:ranch",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch",
     "cheese:beechers", "cheese:dubliner", "cheese:honey_gouda", "cheese:parmigiano", "cheese:gorgonzola",
-    "topping:capers", "topping:pepperoni", "topping:egg",
+    "topping:capers", "topping:pepperoni", "topping:egg", "topping:tomato",
     "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   "sauce:fig_jam": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch",                                               // fig jam wants cheese fat, not mayo fat
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch",
     "cheese:honey_gouda", "cheese:parmigiano",
-    "topping:capers", "topping:pepperoni", "topping:french_onions",
+    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:avocado",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   "sauce:mango_achar": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",                                                             // achar is already spicy — don't double with sriracha cream or muddle with ranch
-    "cheese:honey_gouda", "cheese:parmigiano",
-    "topping:capers", "topping:pepperoni", "topping:french_onions",
-    "mustard:chipotle_cerveza", "mustard:stout_beer",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli",
+    "cheese:honey_gouda", "cheese:parmigiano", "cheese:feta",
+    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:arugula", "topping:avocado",
+    "mustard:stout_beer",
   ],
   "sauce:green_chili_achar": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",                                                             // same: no double spice or ranch muddle
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:brie", "cheese:pepper_jack", "cheese:gorgonzola",
-    "topping:capers", "topping:pepperoni", "topping:egg",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:pesto", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli",
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:brie", "cheese:pepper_jack", "cheese:gorgonzola", "cheese:feta",
+    "topping:capers", "topping:pepperoni", "topping:egg", "topping:arugula", "topping:roasted_red_pepper", "topping:avocado",
     "mustard:lemon_garlic", "mustard:stout_beer",
     "base:croissant",
   ],
-  // Creamy binders — only pair with leads whose profile fits (mayo with bbq/mango is ok; ranch with buffalo is classic)
-  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo", "sauce:fig_jam"],
+  "sauce:pesto": [                                                                                    // Italian basil-olive oil-pine-nut-parm lead
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch",
+    "cheese:beechers", "cheese:dubliner", "cheese:sharp_cheddar", "cheese:aged_gouda", "cheese:honey_gouda", "cheese:red_dragon", "cheese:gorgonzola",
+    "mustard:chipotle_cerveza", "mustard:stout_beer",
+    "base:pretzel_roll", "base:croissant",
+  ],
+  // Creamy binders
+  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli", "sauce:no_sauce", "sauce:buffalo"],
+  "sauce:aioli": [                                                                                    // garlic mayo — Mediterranean lane
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce",
+    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
+    "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
   "sauce:sriracha_mayo": [
-    "sauce:mayo", "sauce:ranch", "sauce:no_sauce",
-    "sauce:buffalo", "sauce:fig_jam", "sauce:marinara", "sauce:mango_achar", "sauce:green_chili_achar",
-    "base:pretzel_roll",
+    "sauce:mayo", "sauce:ranch", "sauce:aioli", "sauce:no_sauce",
+    "sauce:buffalo", "sauce:fig_jam", "sauce:marinara", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:hot_honey", "sauce:pesto",
+    "cheese:parmigiano", "cheese:feta",
   ],
   "sauce:ranch": [
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:no_sauce",
-    "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar",
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:aioli", "sauce:no_sauce",
+    "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto",
+    "cheese:parmigiano", "cheese:feta",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
   ],
-  // None = clears real sauces
   "sauce:no_sauce": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto",
+    "sauce:mayo", "sauce:aioli", "sauce:sriracha_mayo", "sauce:ranch",
   ],
 
   // ── MUSTARD ──
   "mustard:chipotle_cerveza": [
-    "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar", "sauce:buffalo", "sauce:ranch",
+    "sauce:marinara", "sauce:fig_jam", "sauce:buffalo", "sauce:ranch", "sauce:pesto",
+    "cheese:feta",
   ],
   "mustard:lemon_garlic": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:ranch",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:ranch", "sauce:aioli",
     "topping:pepperoni",
   ],
   "mustard:stout_beer": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:ranch",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:ranch", "sauce:pesto", "sauce:aioli",
+    "cheese:feta",
     "topping:pepperoni",
   ],
 
   // ── TOPPINGS ──
   "topping:capers": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:honey_gouda", "cheese:sharp_cheddar",
+    "cheese:honey_gouda",
     "topping:egg", "topping:pepperoni",
     "base:brioche_bun", "base:croissant",
   ],
   "topping:pepperoni": [
     "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:brie", "cheese:goat_cheese",
-    "topping:capers", "topping:egg",
+    "cheese:brie", "cheese:goat_cheese", "cheese:feta",
+    "topping:capers", "topping:egg", "topping:roasted_red_pepper",
     "mustard:lemon_garlic", "mustard:stout_beer",
     "base:croissant",
   ],
@@ -302,8 +349,32 @@ const CLASHES = {
   ],
   "topping:french_onions": [
     "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar",
+    "topping:pickled_red_onion", "topping:arugula",
   ],
   "topping:lil_mamas": ["sauce:buffalo"],
+  // Fresh Veg & Greens
+  "topping:tomato": [                                                                                 // sweet/acidic fresh fruit — wrong with sweet-hot or sweet-smoky sauces
+    "sauce:buffalo", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar",
+    "cheese:honey_gouda",
+  ],
+  "topping:arugula": [                                                                                // peppery bitter green — heat/smoke flatten the pepper note
+    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
+    "cheese:honey_gouda",
+    "topping:french_onions",
+  ],
+  "topping:lettuce": [],                                                                              // neutral — pairs with almost anything
+  "topping:avocado": [
+    "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "cheese:parmigiano", "cheese:gorgonzola",
+  ],
+  "topping:roasted_red_pepper": [                                                                     // Mediterranean — wants goat cheese / pesto / feta
+    "sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar",
+    "cheese:honey_gouda",
+    "topping:pepperoni",
+  ],
+  "topping:pickled_red_onion": ["topping:french_onions"],
+  // Meat
+  "topping:bacon": [],                                                                                // universal; goes with almost anything
 };
 
 function getGreyedOut(selections) {

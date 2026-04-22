@@ -217,7 +217,7 @@ const CLASHES = {
   "cheese:monterey_jack": [],
   "cheese:honey_gouda": [
     "sauce:bbq", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:pesto",
-    "topping:tomato", "topping:arugula", "topping:roasted_red_pepper",
+    "topping:tomato", "topping:arugula", "topping:roasted_red_pepper", "topping:capers",
   ],
   "cheese:std_gouda": [],
   "cheese:brie": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "sauce:green_chili_achar", "topping:pepperoni"],
@@ -271,7 +271,7 @@ const CLASHES = {
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
     "sauce:sriracha_mayo", "sauce:ranch",
     "cheese:honey_gouda", "cheese:parmigiano",
-    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:avocado",
+    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:avocado", "topping:egg",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   "sauce:mango_achar": [
@@ -348,7 +348,7 @@ const CLASHES = {
   "topping:pepperoni": [
     "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
     "cheese:brie", "cheese:goat_cheese", "cheese:feta",
-    "topping:capers", "topping:egg", "topping:roasted_red_pepper", "topping:turkey", "topping:pastrami",
+    "topping:capers", "topping:egg", "topping:roasted_red_pepper", "topping:turkey", "topping:pastrami", "topping:prosciutto",
     "mustard:lemon_garlic", "mustard:stout_beer",
     "base:croissant",
   ],
@@ -361,7 +361,7 @@ const CLASHES = {
     "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar",
     "topping:pickled_red_onion", "topping:arugula",
   ],
-  "topping:lil_mamas": ["sauce:buffalo"],
+  "topping:lil_mamas": ["sauce:buffalo", "topping:roasted_red_pepper"],                             // both are sweet-pickled peppers — redundant on one sandwich
   // Fresh Veg & Greens
   "topping:tomato": [                                                                                 // sweet/acidic fresh fruit — wrong with sweet-hot or sweet-smoky sauces
     "sauce:buffalo", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar",
@@ -380,18 +380,18 @@ const CLASHES = {
   "topping:roasted_red_pepper": [                                                                     // Mediterranean — wants goat cheese / pesto / feta
     "sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar",
     "cheese:honey_gouda",
-    "topping:pepperoni",
+    "topping:pepperoni", "topping:lil_mamas",
   ],
   "topping:pickled_red_onion": ["topping:french_onions"],
   // Meat — one headliner per sandwich; club-style exceptions noted in code (chicken + bacon OK)
   "topping:bacon": [],                                                                                // universal
-  "topping:chicken": ["topping:turkey", "topping:pastrami"],                                         // two headliner proteins = confused sandwich
-  "topping:turkey": [                                                                                 // mild deli — avocado/swiss/cranberry territory
+  "topping:chicken": ["topping:turkey", "topping:pastrami", "topping:prosciutto"],                  // pick ONE headliner meat
+  "topping:turkey": [
     "topping:chicken", "topping:pepperoni", "topping:prosciutto", "topping:pastrami",
     "sauce:marinara", "sauce:pesto", "sauce:sriracha_mayo", "sauce:mango_achar", "sauce:green_chili_achar",
   ],
-  "topping:prosciutto": [                                                                             // cured Italian — fig/pesto/arugula/brie territory
-    "topping:turkey", "topping:pastrami",
+  "topping:prosciutto": [                                                                             // cured Italian — fig/pesto/arugula/brie territory; still a headliner
+    "topping:chicken", "topping:turkey", "topping:pastrami", "topping:pepperoni",
     "sauce:bbq", "sauce:buffalo", "sauce:ranch", "sauce:sriracha_mayo", "sauce:mango_achar", "sauce:green_chili_achar",
     "mustard:chipotle_cerveza", "mustard:stout_beer",
   ],
@@ -716,20 +716,22 @@ export default function SandwichCheatSheet() {
                   <div style={{ fontSize: 13, lineHeight: 1.6, color: "#C5B8A8", fontFamily: "system-ui, sans-serif" }}>
                     {(() => {
                       const HOT_MEATS = ["chicken", "turkey", "pastrami"];
+                      const WARM_SAUCES = ["bbq", "marinara", "buffalo", "hot_honey"];               // sauces you actually toss the meat in
                       const topping = selections.topping || [];
                       const hotMeat = topping.find((t) => HOT_MEATS.includes(t));
-                      const hotMeatLabel = hotMeat && BUILD_CATEGORIES.find((c) => c.id === "topping").items.find((i) => i.id === hotMeat)?.label.toLowerCase();
-                      const wantsSauce = (selections.sauce || []).some((s) => !["no_sauce", "mayo", "aioli", "ranch"].includes(s));
+                      const toppingItems = BUILD_CATEGORIES.find((c) => c.id === "topping").items;
+                      const hotMeatLabel = hotMeat && toppingItems.find((i) => i.id === hotMeat)?.label.toLowerCase();
+                      const hasWarmSauce = (selections.sauce || []).some((s) => WARM_SAUCES.includes(s));
                       const baseItem = BUILD_CATEGORIES.find((c) => c.id === "base").items.find((i) => i.id === selections.base);
                       const baseLabel = (baseItem?.label ?? "bread").toLowerCase();
                       const hasCheese = (selections.cheese || []).length > 0;
-                      const coldToppings = topping.filter((t) => !HOT_MEATS.includes(t) && !["pepperoni"].includes(t));
+                      const coldToppings = topping.filter((t) => !HOT_MEATS.includes(t) && t !== "pepperoni");
                       const hasColdToppings = coldToppings.length > 0;
                       const mustardId = selections.mustard;
                       const hasMustard = typeof mustardId === "string" && !mustardId.startsWith("no_");
                       return (
                         <>
-                          {hotMeat && wantsSauce ? `Warm ${hotMeatLabel} in the sauce. ` : ""}
+                          {hotMeat && hasWarmSauce ? `Warm ${hotMeatLabel} in the sauce. ` : ""}
                           Pile on {baseLabel}
                           {hasCheese ? ", add cheese" : ""}
                           . Air fry 375°F, 3–4 min until bubbly.

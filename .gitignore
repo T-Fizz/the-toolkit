@@ -12,8 +12,9 @@ dist
 dist-ssr
 *.local
 
-# Takumi local state (configs takumi.yaml + takumi-pkg.yaml ARE tracked)
-.takumi/
+# Takumi: track only the workspace marker, ignore local state
+.takumi/*
+!.takumi/TAKUMI.md
 CLAUDE.md
 
 # Editor directories and files

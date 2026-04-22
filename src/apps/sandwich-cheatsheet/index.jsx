@@ -16,12 +16,17 @@ const SANDWICHES = [
 ];
 
 const PANTRY = {
-  "Cheeses": ["Raclette", "Comté 18-Month", "Red Dragon (ale + mustard seed)", "Gouda (honey + standard)", "Beecher's Aged", "Dubliner / Kerrygold Reserve", "Extra Sharp Cheddar"],
+  "Cheeses — Aged & Sharp": ["Beecher's Aged", "Dubliner / Kerrygold Reserve", "Extra Sharp Cheddar", "Aged Gouda", "Manchego", "Parmigiano"],
+  "Cheeses — Alpine & Nutty": ["Comté 18-Month", "Gruyère"],
+  "Cheeses — Classic Melters": ["Raclette", "Low-moisture Mozzarella", "Provolone", "Havarti", "Monterey Jack"],
+  "Cheeses — Mild & Sweet": ["Honey Gouda", "Standard Gouda", "Brie"],
+  "Cheeses — Flavored & Specialty": ["Red Dragon (ale + mustard seed)", "Pepper Jack", "Goat Cheese", "Gorgonzola"],
+  "Breads & Bases": ["Sandwich Rolls", "English Muffins", "Sliced Sandwich Bread", "Sourdough", "Ciabatta", "Brioche Buns", "Pretzel Rolls", "Baguette", "Croissants"],
   "Sauces": ["Kinder's Roasted Garlic BBQ", "Marinara", "Red Hot", "Sriracha", "Ranch", "Mayo", "Ketchup", "Yellow Mustard"],
   "MarketSpice Mustards": ["Chipotle Cerveza", "Hefeweizen Lemon & Garlic", "Stout Beer"],
   "Achars & Spreads": ["Hot Mango Achar", "Green Chili Achar", "Fig Jam (buy this!)", "Wildflower Honey"],
   "Toppings": ["Lil Mama's Peppers", "French Fried Onions", "Pepperoni", "Dill Pickles", "Pickled Jalapeños", "Capers"],
-  "Bases & Protein": ["Sandwich Rolls", "English Muffins", "Rotisserie Chicken (×2)", "Eggs"],
+  "Protein": ["Rotisserie Chicken (×2)", "Eggs"],
 };
 
 const RULES = [
@@ -46,6 +51,13 @@ const BUILD_CATEGORIES = [
     multi: false,
     items: [
       { id: "roll", label: "Sandwich Roll" },
+      { id: "sandwich_bread", label: "Sandwich Bread" },
+      { id: "sourdough", label: "Sourdough" },
+      { id: "ciabatta", label: "Ciabatta" },
+      { id: "brioche_bun", label: "Brioche Bun" },
+      { id: "pretzel_roll", label: "Pretzel Roll" },
+      { id: "baguette", label: "Baguette" },
+      { id: "croissant", label: "Croissant" },
       { id: "muffin", label: "English Muffin" },
     ],
   },
@@ -54,14 +66,31 @@ const BUILD_CATEGORIES = [
     label: "Cheese",
     multi: true,
     items: [
-      { id: "raclette", label: "Raclette" },
-      { id: "comte", label: "Comté" },
-      { id: "red_dragon", label: "Red Dragon" },
-      { id: "honey_gouda", label: "Honey Gouda" },
-      { id: "std_gouda", label: "Standard Gouda" },
-      { id: "beechers", label: "Beecher's Aged" },
-      { id: "dubliner", label: "Dubliner" },
-      { id: "sharp_cheddar", label: "Extra Sharp Cheddar" },
+      // Aged & Sharp
+      { id: "beechers", label: "Beecher's Aged", group: "Aged & Sharp" },
+      { id: "dubliner", label: "Dubliner", group: "Aged & Sharp" },
+      { id: "sharp_cheddar", label: "Extra Sharp Cheddar", group: "Aged & Sharp" },
+      { id: "aged_gouda", label: "Aged Gouda", group: "Aged & Sharp" },
+      { id: "manchego", label: "Manchego", group: "Aged & Sharp" },
+      { id: "parmigiano", label: "Parmigiano", group: "Aged & Sharp" },
+      // Alpine & Nutty
+      { id: "comte", label: "Comté", group: "Alpine & Nutty" },
+      { id: "gruyere", label: "Gruyère", group: "Alpine & Nutty" },
+      // Classic Melters
+      { id: "raclette", label: "Raclette", group: "Classic Melters" },
+      { id: "mozzarella", label: "Mozzarella", group: "Classic Melters" },
+      { id: "provolone", label: "Provolone", group: "Classic Melters" },
+      { id: "havarti", label: "Havarti", group: "Classic Melters" },
+      { id: "monterey_jack", label: "Monterey Jack", group: "Classic Melters" },
+      // Mild & Sweet
+      { id: "honey_gouda", label: "Honey Gouda", group: "Mild & Sweet" },
+      { id: "std_gouda", label: "Standard Gouda", group: "Mild & Sweet" },
+      { id: "brie", label: "Brie", group: "Mild & Sweet" },
+      // Flavored & Specialty
+      { id: "red_dragon", label: "Red Dragon", group: "Flavored & Specialty" },
+      { id: "pepper_jack", label: "Pepper Jack", group: "Flavored & Specialty" },
+      { id: "goat_cheese", label: "Goat Cheese", group: "Flavored & Specialty" },
+      { id: "gorgonzola", label: "Gorgonzola", group: "Flavored & Specialty" },
     ],
   },
   {
@@ -125,71 +154,112 @@ const BUILD_CATEGORIES = [
  *  9. Selecting "None" in a category blocks all real options in that category.
  */
 const CLASHES = {
-  // ── BASE ──
-  "base:roll": ["topping:egg"],
+  // ── BASE ── bread profiles constrain the sauce/topping palette
+  "base:roll": [],
+  "base:sandwich_bread": ["sauce:buffalo"],                                                            // sliced loaf falls apart under wet hot sauce
+  "base:sourdough": [],                                                                                 // universal
+  "base:ciabatta": ["topping:egg"],                                                                    // open crumb lets a fried egg fall through
+  "base:brioche_bun": ["topping:capers"],                                                              // rich sweet bun vs briny capers = muddled
+  "base:pretzel_roll": ["sauce:marinara", "sauce:sriracha_mayo", "topping:egg"],                      // pretzel wants beer+mustard, not Italian/cream
+  "base:baguette": ["sauce:bbq", "sauce:buffalo", "topping:egg"],                                     // too crispy/delicate for wet American sauces or egg
+  "base:croissant": [                                                                                 // buttery pastry = brunch only
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar",
+    "topping:pepperoni", "topping:capers",
+  ],
   "base:muffin": [],
 
   // ── CHEESE ──
-  // Bold/aged cheeses: don't drown
+  // Aged & Sharp: don't drown
   "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
   "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
-  // Pre-sweet cheese: don't stack sweet
-  "cheese:honey_gouda": ["sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar"],
+  "cheese:sharp_cheddar": [],                                                                         // American workhorse, versatile
+  "cheese:aged_gouda": ["sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar"],                // pairs with bbq/hot honey/fig (sweet-aged)
+  "cheese:manchego": ["sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar"],                       // Spanish — fig jam + lemon mustard zone
+  "cheese:parmigiano": [                                                                              // salty/sharp — marinara is the classic pairing, block everything else heavy
+    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+  ],
+  // Alpine & Nutty: permissive
+  "cheese:comte": [],
+  "cheese:gruyere": [],
+  // Classic Melters: mostly permissive
+  "cheese:raclette": [],
+  "cheese:mozzarella": ["sauce:bbq", "sauce:buffalo"],                                                // mozz wants marinara/pesto country
+  "cheese:provolone": [],
+  "cheese:havarti": [],
+  "cheese:monterey_jack": [],
+  // Mild & Sweet
+  "cheese:honey_gouda": ["sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar"],                    // pre-sweet — don't stack
+  "cheese:std_gouda": [],
+  "cheese:brie": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "sauce:green_chili_achar", "topping:pepperoni"], // delicate creamy — no assault
+  // Flavored & Specialty
+  "cheese:red_dragon": [],                                                                            // ale+mustard notes already; flexible
+  "cheese:pepper_jack": ["sauce:buffalo", "sauce:green_chili_achar"],                                 // redundant heat
+  "cheese:goat_cheese": ["sauce:bbq", "sauce:buffalo", "topping:pepperoni"],                          // tangy — wants fig jam / capers territory
+  "cheese:gorgonzola": ["sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:green_chili_achar"], // blue funk wants fig jam / pear-style
 
-  // ── SAUCES — leads block leads ──
+  // ── SAUCES — leads block leads + unsuitable cheeses/bases/toppings ──
   "sauce:bbq": [
     "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "cheese:beechers", "cheese:dubliner",
+    "cheese:beechers", "cheese:dubliner", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:goat_cheese", "cheese:gorgonzola",
     "topping:capers", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer",
+    "base:baguette", "base:croissant",
   ],
   "sauce:marinara": [
     "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "cheese:beechers", "cheese:dubliner",
+    "sauce:sriracha_mayo", "sauce:ranch",                                                             // Italian profile ≠ American ranch / Asian sriracha mayo
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:brie", "cheese:gorgonzola",
     "topping:capers", "topping:french_onions", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer", "mustard:chipotle_cerveza",
+    "base:pretzel_roll", "base:croissant",
   ],
   "sauce:buffalo": [
     "sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
     "sauce:mayo", "sauce:sriracha_mayo",
-    "cheese:beechers", "cheese:dubliner",
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:pepper_jack", "cheese:goat_cheese",
     "topping:capers", "topping:pepperoni", "topping:egg", "topping:lil_mamas",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
+    "base:sandwich_bread", "base:baguette", "base:croissant",
   ],
   "sauce:hot_honey": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
     "sauce:ranch",
-    "cheese:beechers", "cheese:dubliner", "cheese:honey_gouda",
+    "cheese:beechers", "cheese:dubliner", "cheese:honey_gouda", "cheese:parmigiano", "cheese:gorgonzola",
     "topping:capers", "topping:pepperoni", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   "sauce:fig_jam": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",
-    "cheese:honey_gouda",
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch",                                               // fig jam wants cheese fat, not mayo fat
+    "cheese:honey_gouda", "cheese:parmigiano",
     "topping:capers", "topping:pepperoni", "topping:french_onions",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   "sauce:mango_achar": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:ranch",
-    "cheese:honey_gouda",
+    "sauce:sriracha_mayo", "sauce:ranch",                                                             // achar is already spicy — don't double with sriracha cream or muddle with ranch
+    "cheese:honey_gouda", "cheese:parmigiano",
     "topping:capers", "topping:pepperoni", "topping:french_onions",
     "mustard:chipotle_cerveza", "mustard:stout_beer",
   ],
   "sauce:green_chili_achar": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:no_sauce",
-    "sauce:ranch",
-    "cheese:beechers", "cheese:dubliner",
+    "sauce:sriracha_mayo", "sauce:ranch",                                                             // same: no double spice or ranch muddle
+    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:brie", "cheese:pepper_jack", "cheese:gorgonzola",
     "topping:capers", "topping:pepperoni", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer",
+    "base:croissant",
   ],
-  // Creamy binders: block each other, block "no_sauce"
-  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo"],
-  "sauce:sriracha_mayo": ["sauce:mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo", "sauce:fig_jam"],
+  // Creamy binders — only pair with leads whose profile fits (mayo with bbq/mango is ok; ranch with buffalo is classic)
+  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo", "sauce:fig_jam"],
+  "sauce:sriracha_mayo": [
+    "sauce:mayo", "sauce:ranch", "sauce:no_sauce",
+    "sauce:buffalo", "sauce:fig_jam", "sauce:marinara", "sauce:mango_achar", "sauce:green_chili_achar",
+    "base:pretzel_roll",
+  ],
   "sauce:ranch": [
     "sauce:mayo", "sauce:sriracha_mayo", "sauce:no_sauce",
-    "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar",
+    "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar",
     "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
   ],
   // None = clears real sauces
@@ -204,9 +274,11 @@ const CLASHES = {
   ],
   "mustard:lemon_garlic": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:ranch",
+    "topping:pepperoni",
   ],
   "mustard:stout_beer": [
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:ranch",
+    "topping:pepperoni",
   ],
 
   // ── TOPPINGS ──
@@ -214,16 +286,19 @@ const CLASHES = {
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
     "cheese:honey_gouda", "cheese:sharp_cheddar",
     "topping:egg", "topping:pepperoni",
+    "base:brioche_bun", "base:croissant",
   ],
   "topping:pepperoni": [
     "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "cheese:brie", "cheese:goat_cheese",
     "topping:capers", "topping:egg",
     "mustard:lemon_garlic", "mustard:stout_beer",
+    "base:croissant",
   ],
   "topping:egg": [
-    "base:roll",
     "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:green_chili_achar",
     "topping:pepperoni", "topping:capers",
+    "base:ciabatta", "base:pretzel_roll", "base:baguette",
   ],
   "topping:french_onions": [
     "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar",
@@ -419,65 +494,100 @@ export default function SandwichCheatSheet() {
               )}
             </div>
 
-            {BUILD_CATEGORIES.map((cat) => (
-              <div key={cat.id}>
-                <div style={{
-                  fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A",
-                  marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600,
-                  display: "flex", alignItems: "center", gap: 8,
-                }}>
-                  {cat.label}
-                  {cat.multi && <span style={{ fontSize: 9, color: "#6B5D4F", letterSpacing: 0.5, textTransform: "none", fontWeight: 400 }}>(mix ok)</span>}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {cat.items.map((item) => {
-                    const clashKey = `${cat.id}:${item.id}`;
-                    const isClash = greyedOut.has(clashKey);
-                    const isSelected = cat.multi
-                      ? (selections[cat.id] || []).includes(item.id)
-                      : selections[cat.id] === item.id;
-                    const culprit = isClash ? findClashCulprit(cat.id, item.id, selections) : null;
+            {BUILD_CATEGORIES.map((cat) => {
+              const renderItemButton = (item) => {
+                const clashKey = `${cat.id}:${item.id}`;
+                const isClash = greyedOut.has(clashKey);
+                const isSelected = cat.multi
+                  ? (selections[cat.id] || []).includes(item.id)
+                  : selections[cat.id] === item.id;
+                const culprit = isClash ? findClashCulprit(cat.id, item.id, selections) : null;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => !isClash && handleSelect(cat.id, item.id, cat.multi)}
+                    title={culprit ? `Clashes with ${culprit}` : undefined}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: 10,
+                      border: isSelected
+                        ? "2px solid #B8956A"
+                        : isClash
+                          ? "1px solid #2A2A2A"
+                          : "1px solid #3A3A3A",
+                      background: isSelected
+                        ? "#B8956A22"
+                        : isClash
+                          ? "#1E1E1E"
+                          : "#242424",
+                      color: isSelected
+                        ? "#E8D5A0"
+                        : isClash
+                          ? "#444"
+                          : "#C5B8A8",
+                      fontSize: 13,
+                      cursor: isClash ? "not-allowed" : "pointer",
+                      fontFamily: "system-ui, sans-serif",
+                      transition: "all 0.15s ease",
+                      textDecoration: isClash ? "line-through" : "none",
+                      position: "relative",
+                      opacity: isClash ? 0.5 : 1,
+                    }}
+                  >
+                    {isSelected && <span style={{ marginRight: 4 }}>✓</span>}
+                    {item.label}
+                  </button>
+                );
+              };
 
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => !isClash && handleSelect(cat.id, item.id, cat.multi)}
-                        title={culprit ? `Clashes with ${culprit}` : undefined}
-                        style={{
-                          padding: "10px 16px",
-                          borderRadius: 10,
-                          border: isSelected
-                            ? "2px solid #B8956A"
-                            : isClash
-                              ? "1px solid #2A2A2A"
-                              : "1px solid #3A3A3A",
-                          background: isSelected
-                            ? "#B8956A22"
-                            : isClash
-                              ? "#1E1E1E"
-                              : "#242424",
-                          color: isSelected
-                            ? "#E8D5A0"
-                            : isClash
-                              ? "#444"
-                              : "#C5B8A8",
-                          fontSize: 13,
-                          cursor: isClash ? "not-allowed" : "pointer",
-                          fontFamily: "system-ui, sans-serif",
-                          transition: "all 0.15s ease",
-                          textDecoration: isClash ? "line-through" : "none",
-                          position: "relative",
-                          opacity: isClash ? 0.5 : 1,
-                        }}
-                      >
-                        {isSelected && <span style={{ marginRight: 4 }}>✓</span>}
-                        {item.label}
-                      </button>
-                    );
-                  })}
+              const hasGroups = cat.items.some((i) => i.group);
+              let itemsContent;
+              if (hasGroups) {
+                const groupMap = new Map();
+                cat.items.forEach((item) => {
+                  const g = item.group || "";
+                  if (!groupMap.has(g)) groupMap.set(g, []);
+                  groupMap.get(g).push(item);
+                });
+                itemsContent = (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {[...groupMap.entries()].map(([groupName, items]) => (
+                      <div key={groupName}>
+                        <div style={{
+                          fontSize: 9, letterSpacing: 1.5, textTransform: "uppercase",
+                          color: "#6B5D4F", marginBottom: 6, fontFamily: "system-ui, sans-serif", fontWeight: 500,
+                        }}>
+                          {groupName}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {items.map(renderItemButton)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              } else {
+                itemsContent = (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {cat.items.map(renderItemButton)}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={cat.id}>
+                  <div style={{
+                    fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A",
+                    marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600,
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    {cat.label}
+                    {cat.multi && <span style={{ fontSize: 9, color: "#6B5D4F", letterSpacing: 0.5, textTransform: "none", fontWeight: 400 }}>(mix ok)</span>}
+                  </div>
+                  {itemsContent}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Build Summary */}
             {hasSelections && (

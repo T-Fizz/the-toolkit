@@ -1,89 +1,526 @@
-import { Link } from 'react-router-dom'
+import { useState } from "react";
 
-const sections = [
-  {
-    title: 'The Ratio',
-    items: [
-      '2 parts bread by weight',
-      '1 part protein',
-      '1 part vegetable',
-      '0.25 part sauce — any more and it leaks',
-    ],
-  },
-  {
-    title: 'Build Order (bottom → top)',
-    items: [
-      'Bottom bread — toasted side in',
-      'Sauce #1 (fatty: mayo, butter, aioli)',
-      'Protein',
-      'Cheese, if melty — do this while warm',
-      'Pickled thing (onion, pepper, cornichon)',
-      'Crunchy green (lettuce, sprouts, slaw)',
-      'Sauce #2 (bright: mustard, vinaigrette, hot sauce)',
-      'Top bread',
-    ],
-  },
-  {
-    title: 'Pairings that never miss',
-    items: [
-      'Turkey + brie + fig jam + arugula',
-      'Ham + gruyère + dijon + butter',
-      'Egg salad + dill + celery + rye',
-      'Tomato + mayo + flaky salt + white bread',
-      'Mozz + pesto + roasted pepper + ciabatta',
-    ],
-  },
-  {
-    title: 'Field Notes',
-    items: [
-      'Toast the bread if anything is wet.',
-      'Salt the tomato 5 min ahead, blot dry.',
-      'Pickles go next to protein, not next to bread.',
-      'If you can see the fillings from the side, you overbuilt it.',
-    ],
-  },
-]
+/* ─── DATA: PRESET SANDWICHES ─── */
+const SANDWICHES = [
+  { name: "Pizza Sub", vibe: "Classic Italian", emoji: "🍕", base: "Roll", cheese: "Raclette", sauce: "Marinara", mustard: null, toppings: ["Pepperoni", "Lil Mama's Peppers"], achar: null, method: "Layer pepperoni under cheese. Air fry 375°F, 3-4 min. Add peppers after.", tip: "Garlic butter the top bun. Shake oregano + parm over the melted cheese right out of the air fryer.", color: "#C41E3A", bg: "#FFF5F5" },
+  { name: "BBQ Crunch Melt", vibe: "Sweet & Smoky", emoji: "🔥", base: "Roll", cheese: "Red Dragon", sauce: "Kinder's Roasted Garlic BBQ", mustard: "Chipotle Cerveza (thin spread, top bun)", toppings: ["French Fried Onions", "Lil Mama's Peppers"], achar: "Green Chili (swap for peppers)", method: "Warm chicken IN the sauce first. Pile on roll, cheese on top. Air fry 375°F, 3-4 min. Crunchies after.", tip: "Let the BBQ lead. Mustard is backup, not co-pilot.", color: "#8B4513", bg: "#FDF6EE" },
+  { name: "French Onion Sub", vibe: "Deep & Savory", emoji: "🧅", base: "Roll", cheese: "Comté", sauce: null, mustard: "Stout Beer", toppings: ["French Fried Onions"], achar: null, method: "Chicken + Comté on roll. Air fry 375°F, 3-4 min. Pile onions after. Stout mustard on top bun.", tip: "Full send: warm beef broth for dipping on the side.", color: "#5C4033", bg: "#FAF5F0" },
+  { name: "Bistro Melt", vibe: "French Café", emoji: "🫕", base: "Roll", cheese: "Raclette or Comté", sauce: null, mustard: "Hefeweizen Lemon & Garlic", toppings: ["Capers", "Dill Pickles"], achar: null, method: "Chicken + cheese on roll. Air fry 375°F, 3-4 min. Mustard on top bun. Capers + pickles after.", tip: "Capers + lemon garlic mustard is the whole move. Don't skip either.", color: "#1B4D3E", bg: "#F0F7F4" },
+  { name: "Hot Honey Melt", vibe: "Sweet Heat", emoji: "🍯", base: "Roll", cheese: "Raclette", sauce: "Honey + Red Hot (mixed in pan)", mustard: null, toppings: ["Dill Pickles", "Pickled Jalapeños"], achar: null, method: "Warm honey + red hot in pan. Toss chicken. Pile on roll with cheese. Air fry 375°F, 3-4 min. Pickles after.", tip: "Pickles are mandatory — the acid cuts the sweetness. No pickles, no sandwich.", color: "#D4A017", bg: "#FFFBF0" },
+  { name: "Mango Achar Melt", vibe: "Funky & Bold", emoji: "🥭", base: "Roll", cheese: "Comté or Raclette", sauce: "Hot Mango Achar (thin spread on roll)", mustard: null, toppings: ["Capers"], achar: "Hot Mango", method: "Thin smear of achar on bottom bun. Chicken + cheese. Air fry 375°F, 3-4 min. Capers on top.", tip: "A little goes a long way. This is the one that makes people ask what you did.", color: "#E07C24", bg: "#FFF8F0" },
+  { name: "Sriracha Mayo Melt", vibe: "Creamy Spice", emoji: "🌶️", base: "Roll", cheese: "Red Dragon or Comté", sauce: "Sriracha + Mayo (mixed)", mustard: null, toppings: ["Pickled Jalapeños", "Dill Pickles"], achar: null, method: "Chicken + cheese on roll. Air fry 375°F, 3-4 min. Sriracha mayo + toppings after.", tip: "Start with a little sriracha, taste, add more. Build up to where you want it.", color: "#CC2936", bg: "#FFF5F3" },
+  { name: "Fig Jam Special", vibe: "$19 Café Sandwich", emoji: "✨", base: "Roll", cheese: "Red Dragon or Comté", sauce: "Fig Jam (spread on roll)", mustard: null, toppings: ["Lil Mama's Peppers"], achar: null, method: "Fig jam on bottom bun. Chicken + cheese. Air fry 375°F, 3-4 min. Peppers on top.", tip: "Sweet jam + sharp cheese + hot peppers = the holy trinity. Keep it simple.", color: "#6B2D5B", bg: "#F9F3F8" },
+  { name: "Breakfast Melt", vibe: "Morning Hero", emoji: "🍳", base: "English Muffin", cheese: "Comté or Raclette", sauce: "Red Hot or Mango Achar", mustard: null, toppings: ["Fried Egg"], achar: "Hot Mango (thin smear, optional)", method: "Fry egg. Toast muffin. Chicken + cheese on muffin, air fry until melted. Stack egg on top.", tip: "Runny yolk IS the sauce. The achar version is the sleeper best thing on the whole list.", color: "#E8A317", bg: "#FFFCF0" },
+  { name: "Mini Pizza Muffin", vibe: "Snack Attack", emoji: "🧁", base: "English Muffin", cheese: "Raclette", sauce: "Marinara", mustard: null, toppings: ["Pepperoni", "Pickled Jalapeños"], achar: null, method: "Open-faced. Marinara, chicken, pepperoni, cheese. Air fry 375°F, 3-4 min.", tip: "These are dangerous. You'll eat four before you realize it.", color: "#C41E3A", bg: "#FFF5F5" },
+  { name: "Buffalo Ranch", vibe: "The Fallback", emoji: "🦬", base: "Roll or Muffin", cheese: "Any", sauce: "Red Hot + Butter (melted together)", mustard: null, toppings: ["Ranch", "Dill Pickles"], achar: null, method: "Melt butter, stir in red hot. Toss chicken. Pile on roll + cheese. Air fry. Ranch + pickles after.", tip: "You already know this one. It never misses.", color: "#E85D26", bg: "#FFF6F0" },
+];
 
-export default function SandwichCheatsheet() {
+const PANTRY = {
+  "Cheeses": ["Raclette", "Comté 18-Month", "Red Dragon (ale + mustard seed)", "Gouda (honey + standard)", "Beecher's Aged", "Dubliner / Kerrygold Reserve", "Extra Sharp Cheddar"],
+  "Sauces": ["Kinder's Roasted Garlic BBQ", "Marinara", "Red Hot", "Sriracha", "Ranch", "Mayo", "Ketchup", "Yellow Mustard"],
+  "MarketSpice Mustards": ["Chipotle Cerveza", "Hefeweizen Lemon & Garlic", "Stout Beer"],
+  "Achars & Spreads": ["Hot Mango Achar", "Green Chili Achar", "Fig Jam (buy this!)", "Wildflower Honey"],
+  "Toppings": ["Lil Mama's Peppers", "French Fried Onions", "Pepperoni", "Dill Pickles", "Pickled Jalapeños", "Capers"],
+  "Bases & Protein": ["Sandwich Rolls", "English Muffins", "Rotisserie Chicken (×2)", "Eggs"],
+};
+
+const RULES = [
+  { label: "ALWAYS", text: "Warm chicken in sauce before building — don't pile cold chicken" },
+  { label: "ALWAYS", text: "Add crunchy toppings AFTER air frying — they'll blow around" },
+  { label: "ALWAYS", text: "Air fry at 375°F, 3-4 min — watch the cheese, pull when bubbly" },
+  { label: "PAIR", text: "Mango Achar → cheese-forward subs (Comté, Raclette)" },
+  { label: "PAIR", text: "Green Chili Achar → saucy subs (BBQ, marinara)" },
+  { label: "PAIR", text: "Chipotle Cerveza → BBQ sandwiches" },
+  { label: "PAIR", text: "Lemon & Garlic → Beecher's, Comté, lighter builds" },
+  { label: "PAIR", text: "Stout Beer → French onion, Dubliner" },
+  { label: "NEVER", text: "Capers on BBQ sandwiches — they clash with sweetness" },
+  { label: "NEVER", text: "Drown Beecher's or Dubliner in heavy sauce — let the cheese star" },
+  { label: "NEVER", text: "Forget the second chicken next time" },
+];
+
+/* ─── BUILD YOUR OWN: OPTIONS + CLASH SYSTEM ─── */
+const BUILD_CATEGORIES = [
+  {
+    id: "base",
+    label: "Base",
+    multi: false,
+    items: [
+      { id: "roll", label: "Sandwich Roll" },
+      { id: "muffin", label: "English Muffin" },
+    ],
+  },
+  {
+    id: "cheese",
+    label: "Cheese",
+    multi: true,
+    items: [
+      { id: "raclette", label: "Raclette" },
+      { id: "comte", label: "Comté" },
+      { id: "red_dragon", label: "Red Dragon" },
+      { id: "honey_gouda", label: "Honey Gouda" },
+      { id: "std_gouda", label: "Standard Gouda" },
+      { id: "beechers", label: "Beecher's Aged" },
+      { id: "dubliner", label: "Dubliner" },
+      { id: "sharp_cheddar", label: "Extra Sharp Cheddar" },
+    ],
+  },
+  {
+    id: "sauce",
+    label: "Sauce / Spread",
+    multi: true,
+    items: [
+      { id: "bbq", label: "Kinder's BBQ" },
+      { id: "marinara", label: "Marinara" },
+      { id: "buffalo", label: "Buffalo (Red Hot + Butter)" },
+      { id: "hot_honey", label: "Hot Honey (Honey + Red Hot)" },
+      { id: "sriracha_mayo", label: "Sriracha Mayo" },
+      { id: "fig_jam", label: "Fig Jam" },
+      { id: "mango_achar", label: "Hot Mango Achar" },
+      { id: "green_chili_achar", label: "Green Chili Achar" },
+      { id: "ranch", label: "Ranch" },
+      { id: "mayo", label: "Mayo" },
+      { id: "no_sauce", label: "None (let cheese star)" },
+    ],
+  },
+  {
+    id: "mustard",
+    label: "Mustard",
+    multi: true,
+    items: [
+      { id: "chipotle_cerveza", label: "Chipotle Cerveza" },
+      { id: "lemon_garlic", label: "Lemon & Garlic" },
+      { id: "stout_beer", label: "Stout Beer" },
+      { id: "no_mustard", label: "None" },
+    ],
+  },
+  {
+    id: "topping",
+    label: "Toppings",
+    multi: true,
+    items: [
+      { id: "lil_mamas", label: "Lil Mama's Peppers" },
+      { id: "french_onions", label: "French Fried Onions" },
+      { id: "pepperoni", label: "Pepperoni" },
+      { id: "dill_pickles", label: "Dill Pickles" },
+      { id: "pickled_japs", label: "Pickled Jalapeños" },
+      { id: "capers", label: "Capers" },
+      { id: "egg", label: "Fried Egg" },
+    ],
+  },
+];
+
+// Clash rules: selection → items that get greyed out
+// Format: { "category:item_id": ["category:item_id", ...] }
+const CLASHES = {
+  // ── SAUCE vs SAUCE (within category) ──
+  "sauce:bbq": ["topping:capers", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar"],
+  "sauce:marinara": ["topping:capers", "sauce:bbq", "sauce:fig_jam", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "mustard:stout_beer", "mustard:lemon_garlic"],
+  "sauce:buffalo": ["topping:capers", "topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "mustard:stout_beer"],
+  "sauce:hot_honey": ["topping:capers", "sauce:bbq", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar"],
+  "sauce:fig_jam": ["topping:capers", "topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:sriracha_mayo", "mustard:chipotle_cerveza", "mustard:stout_beer"],
+  "sauce:mango_achar": ["topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "mustard:chipotle_cerveza", "mustard:stout_beer"],
+  "sauce:green_chili_achar": ["topping:pepperoni", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "mustard:lemon_garlic"],
+  "sauce:sriracha_mayo": ["sauce:fig_jam"],
+  "sauce:ranch": ["mustard:stout_beer", "mustard:chipotle_cerveza"],
+  // mayo pairs with almost anything — no clashes
+  // no_sauce — no clashes
+
+  // ── SAUCE combos that DO work (not listed = allowed) ──
+  // BBQ + sriracha_mayo ✓ | BBQ + ranch ✓ | BBQ + mayo ✓
+  // marinara + mayo ✓ | buffalo + ranch ✓ (classic)
+  // hot_honey + sriracha_mayo ✓ | mango_achar + mayo ✓
+  // green_chili_achar + bbq ✓ (we said this works!)
+
+  // ── CHEESE vs SAUCE ──
+  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey"],
+  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey"],
+
+  // ── TOPPINGS vs SAUCE ──
+  "topping:capers": ["sauce:bbq", "sauce:hot_honey", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo"],
+  "topping:pepperoni": ["sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:buffalo"],
+
+  // ── MUSTARD vs SAUCE ──
+  "mustard:chipotle_cerveza": ["sauce:fig_jam", "sauce:mango_achar", "sauce:ranch"],
+  "mustard:lemon_garlic": ["sauce:bbq", "sauce:marinara", "sauce:green_chili_achar"],
+  "mustard:stout_beer": ["sauce:marinara", "sauce:fig_jam", "sauce:ranch", "sauce:buffalo"],
+};
+
+// Clash reasons for tooltip
+const CLASH_REASONS = {
+  "topping:capers": "Capers clash with sweet sauces",
+  "topping:pepperoni": "Pepperoni works best with marinara/BBQ",
+  "sauce:bbq": "Too heavy — let this cheese shine",
+  "sauce:marinara": "Too heavy — let this cheese shine",
+  "sauce:buffalo": "Too heavy — let this cheese shine",
+  "sauce:hot_honey": "Too heavy — let this cheese shine",
+  "sauce:fig_jam": "Flavor clash — too much going on",
+  "sauce:mango_achar": "Flavor clash",
+  "sauce:green_chili_achar": "Flavor clash",
+  "sauce:ranch": "Won't complement this mustard",
+  "mustard:chipotle_cerveza": "Wrong vibe for this sauce",
+  "mustard:lemon_garlic": "Wrong vibe for this sauce",
+  "mustard:stout_beer": "Wrong vibe for this sauce",
+};
+
+function getGreyedOut(selections) {
+  const greyed = new Set();
+  for (const [catId, val] of Object.entries(selections)) {
+    if (!val) continue;
+    const values = Array.isArray(val) ? val : [val];
+    for (const v of values) {
+      if (v.startsWith("no_")) continue;
+      const key = `${catId}:${v}`;
+      if (CLASHES[key]) {
+        CLASHES[key].forEach((c) => greyed.add(c));
+      }
+    }
+  }
+  return greyed;
+}
+
+/* ─── SHARED COMPONENTS ─── */
+function InfoBlock({ label, value, color }) {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <nav className="mb-8">
-        <Link
-          to="/"
-          className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-        >
-          ← The Toolkit
-        </Link>
-      </nav>
+    <div style={{ background: color + "08", borderRadius: 6, padding: "8px 10px" }}>
+      <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 2, fontFamily: "system-ui, sans-serif" }}>{label}</div>
+      <div style={{ fontSize: 12, color: "#3A2E24", fontWeight: 500, lineHeight: 1.3, fontFamily: "system-ui, sans-serif" }}>{value}</div>
+    </div>
+  );
+}
 
-      <header className="mb-10">
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Sandwich Cheat Sheet
-        </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Placeholder content — replace with the artifact from Claude.ai.
-        </p>
-      </header>
+/* ─── MAIN APP ─── */
+export default function SandwichCheatSheet() {
+  const [view, setView] = useState("sandwiches");
+  const [expanded, setExpanded] = useState(null);
+  const [selections, setSelections] = useState({
+    base: null, cheese: [], sauce: [], mustard: [], topping: [],
+  });
 
-      <div className="space-y-10">
-        {sections.map((s) => (
-          <section key={s.title}>
-            <h2 className="mb-3 text-lg font-medium text-slate-900 dark:text-slate-100">
-              {s.title}
-            </h2>
-            <ul className="space-y-2 text-slate-700 dark:text-slate-300">
-              {s.items.map((item) => (
-                <li
-                  key={item}
-                  className="rounded border border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
+  const greyedOut = getGreyedOut(selections);
+
+  const handleSelect = (catId, itemId, multi) => {
+    setSelections((prev) => {
+      if (multi) {
+        const arr = prev[catId] || [];
+        return { ...prev, [catId]: arr.includes(itemId) ? arr.filter((x) => x !== itemId) : [...arr, itemId] };
+      }
+      return { ...prev, [catId]: prev[catId] === itemId ? null : itemId };
+    });
+  };
+
+  const resetBuild = () => setSelections({ base: null, cheese: [], sauce: [], mustard: [], topping: [] });
+
+  const hasSelections = selections.base || (selections.cheese && selections.cheese.length > 0) || (selections.sauce && selections.sauce.length > 0) || (selections.mustard && selections.mustard.length > 0) || (selections.topping && selections.topping.length > 0);
+
+  // Build summary
+  const getSummaryParts = () => {
+    const parts = [];
+    BUILD_CATEGORIES.forEach((cat) => {
+      const val = selections[cat.id];
+      if (!val || (Array.isArray(val) && val.length === 0)) return;
+      const values = Array.isArray(val) ? val : [val];
+      values.forEach((v) => {
+        if (v.startsWith("no_")) return;
+        const item = cat.items.find((i) => i.id === v);
+        if (item) parts.push(item.label);
+      });
+    });
+    return parts;
+  };
+
+  const TABS = [
+    { id: "sandwiches", label: "Builds" },
+    { id: "build", label: "Create" },
+    { id: "pantry", label: "Pantry" },
+    { id: "rules", label: "Rules" },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#1A1A1A", fontFamily: "'Georgia', serif", color: "#F5F0EB", paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg, #2C1810 0%, #1A1A1A 100%)", padding: "32px 20px 24px", borderBottom: "2px solid #3D2B1F" }}>
+        <div style={{ fontSize: 12, letterSpacing: 4, textTransform: "uppercase", color: "#B8956A", marginBottom: 8, fontFamily: "system-ui, sans-serif" }}>The Definitive Guide</div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, lineHeight: 1.15 }}>Chicken Sandwich<br />Cheat Sheet</h1>
+        <div style={{ fontSize: 14, color: "#8A7B6B", marginTop: 8, fontStyle: "italic" }}>"Should've gotten two chickens"</div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: "1px solid #3D2B1F", position: "sticky", top: 0, zIndex: 10, background: "#1A1A1A" }}>
+        {TABS.map((tab) => (
+          <button key={tab.id} onClick={() => setView(tab.id)} style={{
+            flex: 1, padding: "14px 4px", border: "none",
+            borderBottom: view === tab.id ? "2px solid #B8956A" : "2px solid transparent",
+            background: "transparent", color: view === tab.id ? "#F5F0EB" : "#6B5D4F",
+            fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "system-ui, sans-serif",
+            letterSpacing: 1, textTransform: "uppercase", transition: "all 0.2s",
+          }}>{tab.label}</button>
         ))}
       </div>
-    </main>
-  )
+
+      <div style={{ padding: "16px 16px 0" }}>
+
+        {/* ═══ SANDWICHES TAB ═══ */}
+        {view === "sandwiches" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {SANDWICHES.map((s, i) => {
+              const isOpen = expanded === i;
+              return (
+                <div key={i} onClick={() => setExpanded(isOpen ? null : i)} style={{
+                  background: isOpen ? s.bg : "#242424", border: `1px solid ${isOpen ? s.color + "44" : "#333"}`,
+                  borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "all 0.25s ease",
+                }}>
+                  <div style={{ padding: "16px", display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ fontSize: 28, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: isOpen ? s.color + "18" : "#2A2A2A", flexShrink: 0 }}>{s.emoji}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: isOpen ? s.color : "#F5F0EB", lineHeight: 1.2 }}>{s.name}</div>
+                      <div style={{ fontSize: 13, color: isOpen ? "#5A4A3A" : "#7A6B5B", marginTop: 2, fontFamily: "system-ui, sans-serif" }}>{s.vibe} · {s.base} · {s.cheese}</div>
+                    </div>
+                    <div style={{ color: isOpen ? s.color : "#555", fontSize: 20, fontWeight: 300, transition: "transform 0.2s", transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}>+</div>
+                  </div>
+                  {isOpen && (
+                    <div style={{ padding: "0 16px 18px", color: "#3A2E24" }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                        <InfoBlock label="Cheese" value={s.cheese} color={s.color} />
+                        <InfoBlock label="Base" value={s.base} color={s.color} />
+                        {s.sauce && <InfoBlock label="Sauce" value={s.sauce} color={s.color} />}
+                        {s.mustard && <InfoBlock label="Mustard" value={s.mustard} color={s.color} />}
+                      </div>
+                      {s.toppings && (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>Toppings</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {s.toppings.map((t, j) => (
+                              <span key={j} style={{ background: s.color + "15", border: `1px solid ${s.color}33`, color: s.color, padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500, fontFamily: "system-ui, sans-serif" }}>{t}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {s.achar && (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 4, fontFamily: "system-ui, sans-serif" }}>Achar Option</div>
+                          <div style={{ fontSize: 13, color: "#5A4A3A", fontFamily: "system-ui, sans-serif" }}>{s.achar}</div>
+                        </div>
+                      )}
+                      <div style={{ background: s.color + "0C", border: `1px solid ${s.color}22`, borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>Method</div>
+                        <div style={{ fontSize: 13, lineHeight: 1.6, color: "#3A2E24", fontFamily: "system-ui, sans-serif" }}>{s.method}</div>
+                      </div>
+                      <div style={{ background: "#FFF9E6", border: "1px solid #E8D5A0", borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#A08B5B", marginBottom: 4, fontFamily: "system-ui, sans-serif" }}>Pro Tip</div>
+                        <div style={{ fontSize: 13, lineHeight: 1.5, color: "#5A4A2A", fontStyle: "italic", fontFamily: "system-ui, sans-serif" }}>{s.tip}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ═══ BUILD YOUR OWN TAB ═══ */}
+        {view === "build" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: "#B8956A", fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>
+                Build Your Own
+              </div>
+              {hasSelections && (
+                <button onClick={resetBuild} style={{
+                  background: "transparent", border: "1px solid #444", color: "#8A7B6B",
+                  padding: "6px 14px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+                  fontFamily: "system-ui, sans-serif", letterSpacing: 0.5,
+                }}>Reset</button>
+              )}
+            </div>
+
+            {BUILD_CATEGORIES.map((cat) => (
+              <div key={cat.id}>
+                <div style={{
+                  fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A",
+                  marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600,
+                  display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  {cat.label}
+                  {cat.multi && <span style={{ fontSize: 9, color: "#6B5D4F", letterSpacing: 0.5, textTransform: "none", fontWeight: 400 }}>(mix ok)</span>}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {cat.items.map((item) => {
+                    const clashKey = `${cat.id}:${item.id}`;
+                    const isClash = greyedOut.has(clashKey);
+                    const isSelected = cat.multi
+                      ? (selections[cat.id] || []).includes(item.id)
+                      : selections[cat.id] === item.id;
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => !isClash && handleSelect(cat.id, item.id, cat.multi)}
+                        style={{
+                          padding: "10px 16px",
+                          borderRadius: 10,
+                          border: isSelected
+                            ? "2px solid #B8956A"
+                            : isClash
+                              ? "1px solid #2A2A2A"
+                              : "1px solid #3A3A3A",
+                          background: isSelected
+                            ? "#B8956A22"
+                            : isClash
+                              ? "#1E1E1E"
+                              : "#242424",
+                          color: isSelected
+                            ? "#E8D5A0"
+                            : isClash
+                              ? "#444"
+                              : "#C5B8A8",
+                          fontSize: 13,
+                          cursor: isClash ? "not-allowed" : "pointer",
+                          fontFamily: "system-ui, sans-serif",
+                          transition: "all 0.15s ease",
+                          textDecoration: isClash ? "line-through" : "none",
+                          position: "relative",
+                          opacity: isClash ? 0.5 : 1,
+                        }}
+                      >
+                        {isSelected && <span style={{ marginRight: 4 }}>✓</span>}
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {/* Build Summary */}
+            {hasSelections && (
+              <div style={{
+                background: "#2A2418",
+                border: "1px solid #3D3020",
+                borderRadius: 12,
+                padding: 16,
+                marginTop: 4,
+              }}>
+                <div style={{
+                  fontSize: 10, letterSpacing: 2, textTransform: "uppercase",
+                  color: "#B8956A", marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600,
+                }}>Your Sandwich</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                  {getSummaryParts().map((p, i) => (
+                    <span key={i} style={{
+                      background: "#B8956A18", border: "1px solid #B8956A33",
+                      color: "#E8D5A0", padding: "5px 12px", borderRadius: 20,
+                      fontSize: 12, fontFamily: "system-ui, sans-serif",
+                    }}>{p}</span>
+                  ))}
+                </div>
+                <div style={{
+                  background: "#1A1A1A", borderRadius: 8, padding: 12,
+                  border: "1px solid #333",
+                }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>Method</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#C5B8A8", fontFamily: "system-ui, sans-serif" }}>
+                    {(selections.sauce || []).some(s => !["no_sauce", "mayo", "ranch"].includes(s))
+                      ? "Warm chicken in sauce. "
+                      : ""}
+                    Pile on {selections.base === "muffin" ? "muffin" : "roll"}
+                    {(selections.cheese || []).length > 0 ? ", add cheese" : ""}
+                    . Air fry 375°F, 3-4 min until bubbly.
+                    {(selections.topping || []).length > 0 ? " Add toppings after." : ""}
+                    {(selections.mustard || []).some(m => !m.startsWith("no_")) ? " Mustard on the top bun." : ""}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!hasSelections && (
+              <div style={{
+                textAlign: "center", padding: "32px 16px",
+                color: "#4A3F34", fontSize: 14, fontStyle: "italic",
+              }}>
+                Tap to build. Clashing combos will grey out as you go.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ PANTRY TAB ═══ */}
+        {view === "pantry" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {Object.entries(PANTRY).map(([category, items]) => (
+              <div key={category}>
+                <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: "#B8956A", marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>{category}</div>
+                <div style={{ background: "#242424", borderRadius: 12, border: "1px solid #333", overflow: "hidden" }}>
+                  {items.map((item, j) => (
+                    <div key={j} style={{ padding: "12px 16px", borderBottom: j < items.length - 1 ? "1px solid #2E2E2E" : "none", fontSize: 14, color: "#D5CBC0", fontFamily: "system-ui, sans-serif" }}>{item}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div style={{ background: "#2A2418", border: "1px solid #3D3020", borderRadius: 12, padding: 16, marginTop: 4 }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A", marginBottom: 6, fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>Also in the kitchen</div>
+              <div style={{ fontSize: 13, color: "#8A7B6B", lineHeight: 1.7, fontFamily: "system-ui, sans-serif" }}>
+                Sriracha · Mayo · Ketchup · Yellow Mustard · Butter · Garlic · Spices & staples · Wildflower Honey · French Fried Onions · Dill Pickles · Pickled Jalapeños · Capers
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ RULES TAB ═══ */}
+        {view === "rules" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: "#B8956A", marginBottom: 4, fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>Golden Rules</div>
+            {RULES.map((rule, i) => (
+              <div key={i} style={{ background: "#242424", border: "1px solid #333", borderRadius: 10, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: "3px 8px", borderRadius: 4,
+                  flexShrink: 0, marginTop: 2, fontFamily: "system-ui, sans-serif",
+                  background: rule.label === "ALWAYS" ? "#1B4D3E22" : rule.label === "PAIR" ? "#B8956A22" : "#C41E3A22",
+                  color: rule.label === "ALWAYS" ? "#4A9B7F" : rule.label === "PAIR" ? "#B8956A" : "#E05555",
+                  border: `1px solid ${rule.label === "ALWAYS" ? "#4A9B7F33" : rule.label === "PAIR" ? "#B8956A33" : "#E0555533"}`,
+                }}>{rule.label}</span>
+                <span style={{ fontSize: 13, color: "#C5B8A8", lineHeight: 1.5, fontFamily: "system-ui, sans-serif" }}>{rule.text}</span>
+              </div>
+            ))}
+
+            <div style={{ background: "#2A2418", border: "1px solid #3D3020", borderRadius: 12, padding: 16, marginTop: 8 }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A", marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>Mustard Cheat Sheet</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { m: "Chipotle Cerveza", p: "BBQ sandwiches" },
+                  { m: "Lemon & Garlic", p: "Beecher's, Comté, lighter builds" },
+                  { m: "Stout Beer", p: "French onion, Dubliner" },
+                ].map((x, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontFamily: "system-ui, sans-serif" }}>
+                    <span style={{ color: "#D5CBC0", fontWeight: 600, minWidth: 110 }}>{x.m}</span>
+                    <span style={{ color: "#6B5D4F" }}>→</span>
+                    <span style={{ color: "#8A7B6B" }}>{x.p}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: "#2A2418", border: "1px solid #3D3020", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#B8956A", marginBottom: 10, fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>Achar Cheat Sheet</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { a: "Hot Mango", p: "Cheese-forward (Comté, Raclette)" },
+                  { a: "Green Chili", p: "Saucy builds (BBQ, marinara)" },
+                ].map((x, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontFamily: "system-ui, sans-serif" }}>
+                    <span style={{ color: "#D5CBC0", fontWeight: 600, minWidth: 110 }}>{x.a}</span>
+                    <span style={{ color: "#6B5D4F" }}>→</span>
+                    <span style={{ color: "#8A7B6B" }}>{x.p}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", padding: "24px 0", color: "#4A3F34", fontSize: 14, fontStyle: "italic" }}>
+              Now go get that second chicken.
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

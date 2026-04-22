@@ -1,59 +1,140 @@
-import { Link, Route, Routes } from 'react-router-dom'
-import SandwichCheatsheet from './apps/sandwich-cheatsheet/index.jsx'
+import { Routes, Route, Link } from 'react-router-dom'
+import SandwichCheatSheet from './apps/sandwich-cheatsheet/index.jsx'
 
-const apps = [
+const TOOLS = [
   {
-    slug: 'sandwich-cheatsheet',
-    name: 'Sandwich Cheat Sheet',
-    description: 'Build a better sandwich. Ratios, pairings, and field notes.',
+    name: "Chicken Sandwich Cheat Sheet",
+    path: "/sandwich-cheatsheet",
+    description: "Build the perfect chicken sandwich with clash detection",
+    emoji: "🥪",
   },
 ]
 
 function Home() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <header className="mb-12">
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          The Toolkit
+    <div style={{
+      minHeight: "100vh",
+      background: "#1A1A1A",
+      color: "#F5F0EB",
+      fontFamily: "system-ui, sans-serif",
+      padding: "48px 24px",
+    }}>
+      <div style={{ maxWidth: 600, margin: "0 auto" }}>
+        <div style={{
+          fontSize: 12,
+          letterSpacing: 4,
+          textTransform: "uppercase",
+          color: "#B8956A",
+          marginBottom: 12,
+        }}>
+          Collection
+        </div>
+        <h1 style={{
+          fontSize: 36,
+          fontWeight: 700,
+          margin: "0 0 8px",
+          fontFamily: "'Georgia', serif",
+        }}>
+          Snazzy Tools
         </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          A small, growing collection of personal tools.
+        <p style={{
+          color: "#6B5D4F",
+          fontSize: 15,
+          marginBottom: 40,
+        }}>
+          A personal collection of little single-purpose apps that look good and actually do something useful.
         </p>
-      </header>
 
-      <ul className="space-y-3">
-        {apps.map((app) => (
-          <li key={app.slug}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {TOOLS.map((tool) => (
             <Link
-              to={`/${app.slug}`}
-              className="group block rounded-lg border border-slate-200 bg-white p-5 transition hover:border-slate-400 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
+              key={tool.path}
+              to={tool.path}
+              style={{
+                background: "#242424",
+                border: "1px solid #333",
+                borderRadius: 12,
+                padding: "20px",
+                textDecoration: "none",
+                color: "#F5F0EB",
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                transition: "border-color 0.2s",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "#B8956A"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "#333"}
             >
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 className="font-medium text-slate-900 dark:text-slate-100">
-                  {app.name}
-                </h2>
-                <span className="text-sm text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-600 dark:group-hover:text-slate-300">
-                  →
-                </span>
+              <div style={{
+                fontSize: 32,
+                width: 52,
+                height: 52,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 12,
+                background: "#2A2A2A",
+                flexShrink: 0,
+              }}>
+                {tool.emoji}
               </div>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                {app.description}
-              </p>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
+                  {tool.name}
+                </div>
+                <div style={{ fontSize: 13, color: "#7A6B5B" }}>
+                  {tool.description}
+                </div>
+              </div>
             </Link>
-          </li>
-        ))}
-      </ul>
-    </main>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BackToHome() {
+  return (
+    <Link
+      to="/"
+      style={{
+        position: "fixed",
+        top: 16,
+        left: 16,
+        zIndex: 20,
+        background: "#242424cc",
+        backdropFilter: "blur(8px)",
+        border: "1px solid #3D2B1F",
+        borderRadius: 20,
+        padding: "6px 12px",
+        color: "#B8956A",
+        fontSize: 12,
+        fontFamily: "system-ui, sans-serif",
+        fontWeight: 600,
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        textDecoration: "none",
+      }}
+    >
+      ← Tools
+    </Link>
   )
 }
 
 export default function App() {
   return (
-    <div className="min-h-dvh bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/sandwich-cheatsheet" element={<SandwichCheatsheet />} />
-      </Routes>
-    </div>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route
+        path="/sandwich-cheatsheet"
+        element={
+          <>
+            <BackToHome />
+            <SandwichCheatSheet />
+          </>
+        }
+      />
+    </Routes>
   )
 }

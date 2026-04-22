@@ -3,9 +3,9 @@ import SandwichCheatSheet from './apps/sandwich-cheatsheet/index.jsx'
 
 const TOOLS = [
   {
-    name: "Chicken Sandwich Cheat Sheet",
+    name: "Sandwich Cheat Sheet",
     path: "/sandwich-cheatsheet",
-    description: "Build the perfect chicken sandwich with clash detection",
+    description: "Build a sandwich that actually works — food-theory clash detection",
     emoji: "🥪",
   },
 ]

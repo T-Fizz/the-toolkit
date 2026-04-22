@@ -451,7 +451,7 @@ export default function SandwichCheatSheet() {
   const [view, setView] = useState("sandwiches");
   const [expanded, setExpanded] = useState(null);
   const [selections, setSelections] = useState({
-    base: null, cheese: [], sauce: [], mustard: [], topping: [],
+    base: null, cheese: [], sauce: [], mustard: null, topping: [],
   });
 
   const greyedOut = getGreyedOut(selections);
@@ -466,7 +466,7 @@ export default function SandwichCheatSheet() {
     });
   };
 
-  const resetBuild = () => setSelections({ base: null, cheese: [], sauce: [], mustard: [], topping: [] });
+  const resetBuild = () => setSelections({ base: null, cheese: [], sauce: [], mustard: null, topping: [] });
 
   const hasSelections = selections.base || (selections.cheese && selections.cheese.length > 0) || (selections.sauce && selections.sauce.length > 0) || (selections.mustard && selections.mustard.length > 0) || (selections.topping && selections.topping.length > 0);
 
@@ -726,7 +726,7 @@ export default function SandwichCheatSheet() {
                       const coldToppings = topping.filter((t) => !HOT_MEATS.includes(t) && !["pepperoni"].includes(t));
                       const hasColdToppings = coldToppings.length > 0;
                       const mustardId = selections.mustard;
-                      const hasMustard = mustardId && !mustardId.startsWith("no_");
+                      const hasMustard = typeof mustardId === "string" && !mustardId.startsWith("no_");
                       return (
                         <>
                           {hotMeat && wantsSauce ? `Warm ${hotMeatLabel} in the sauce. ` : ""}

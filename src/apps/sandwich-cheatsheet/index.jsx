@@ -85,7 +85,7 @@ const BUILD_CATEGORIES = [
   {
     id: "mustard",
     label: "Mustard",
-    multi: true,
+    multi: false,
     items: [
       { id: "chipotle_cerveza", label: "Chipotle Cerveza" },
       { id: "lemon_garlic", label: "Lemon & Garlic" },
@@ -109,57 +109,126 @@ const BUILD_CATEGORIES = [
   },
 ];
 
-// Clash rules: selection → items that get greyed out
-// Format: { "category:item_id": ["category:item_id", ...] }
+/*
+ * CLASHES — food-theory rules. Each entry: "category:item" → [items it blocks].
+ * Entries are symmetric: if A blocks B, B blocks A (so either pick order works).
+ *
+ * Principles encoded:
+ *  1. One lead sauce per sandwich (leads block leads).
+ *  2. Creamy binders compose with leads where profiles agree; block each other.
+ *  3. Strong/aged cheeses (Beecher's, Dubliner) don't get drowned in heavy sauce.
+ *  4. Pre-sweet cheese (honey gouda) doesn't stack with sweet sauces.
+ *  5. Pepperoni lives in marinara/BBQ country; nowhere else.
+ *  6. Capers need clean, bright backdrops — no sweet/smoky/heavy sauces.
+ *  7. Fried egg → muffin only; only mild savory backdrop.
+ *  8. Each mustard has a profile: chipotle=BBQ, lemon=bright/cheese, stout=dark/savory.
+ *  9. Selecting "None" in a category blocks all real options in that category.
+ */
 const CLASHES = {
-  // ── SAUCE vs SAUCE (within category) ──
-  "sauce:bbq": ["topping:capers", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar"],
-  "sauce:marinara": ["topping:capers", "sauce:bbq", "sauce:fig_jam", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "mustard:stout_beer", "mustard:lemon_garlic"],
-  "sauce:buffalo": ["topping:capers", "topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "mustard:stout_beer"],
-  "sauce:hot_honey": ["topping:capers", "sauce:bbq", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar"],
-  "sauce:fig_jam": ["topping:capers", "topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:sriracha_mayo", "mustard:chipotle_cerveza", "mustard:stout_beer"],
-  "sauce:mango_achar": ["topping:pepperoni", "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "mustard:chipotle_cerveza", "mustard:stout_beer"],
-  "sauce:green_chili_achar": ["topping:pepperoni", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "mustard:lemon_garlic"],
-  "sauce:sriracha_mayo": ["sauce:fig_jam"],
-  "sauce:ranch": ["mustard:stout_beer", "mustard:chipotle_cerveza"],
-  // mayo pairs with almost anything — no clashes
-  // no_sauce — no clashes
+  // ── BASE ──
+  "base:roll": ["topping:egg"],
+  "base:muffin": [],
 
-  // ── SAUCE combos that DO work (not listed = allowed) ──
-  // BBQ + sriracha_mayo ✓ | BBQ + ranch ✓ | BBQ + mayo ✓
-  // marinara + mayo ✓ | buffalo + ranch ✓ (classic)
-  // hot_honey + sriracha_mayo ✓ | mango_achar + mayo ✓
-  // green_chili_achar + bbq ✓ (we said this works!)
+  // ── CHEESE ──
+  // Bold/aged cheeses: don't drown
+  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
+  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar"],
+  // Pre-sweet cheese: don't stack sweet
+  "cheese:honey_gouda": ["sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar"],
 
-  // ── CHEESE vs SAUCE ──
-  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey"],
-  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey"],
+  // ── SAUCES — leads block leads ──
+  "sauce:bbq": [
+    "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "cheese:beechers", "cheese:dubliner",
+    "topping:capers", "topping:egg",
+    "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  "sauce:marinara": [
+    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "cheese:beechers", "cheese:dubliner",
+    "topping:capers", "topping:french_onions", "topping:egg",
+    "mustard:lemon_garlic", "mustard:stout_beer", "mustard:chipotle_cerveza",
+  ],
+  "sauce:buffalo": [
+    "sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "sauce:mayo", "sauce:sriracha_mayo",
+    "cheese:beechers", "cheese:dubliner",
+    "topping:capers", "topping:pepperoni", "topping:egg", "topping:lil_mamas",
+    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  "sauce:hot_honey": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "sauce:ranch",
+    "cheese:beechers", "cheese:dubliner", "cheese:honey_gouda",
+    "topping:capers", "topping:pepperoni", "topping:egg",
+    "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  "sauce:fig_jam": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
+    "sauce:sriracha_mayo", "sauce:ranch",
+    "cheese:honey_gouda",
+    "topping:capers", "topping:pepperoni", "topping:french_onions",
+    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  "sauce:mango_achar": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:no_sauce",
+    "sauce:ranch",
+    "cheese:honey_gouda",
+    "topping:capers", "topping:pepperoni", "topping:french_onions",
+    "mustard:chipotle_cerveza", "mustard:stout_beer",
+  ],
+  "sauce:green_chili_achar": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:no_sauce",
+    "sauce:ranch",
+    "cheese:beechers", "cheese:dubliner",
+    "topping:capers", "topping:pepperoni", "topping:egg",
+    "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  // Creamy binders: block each other, block "no_sauce"
+  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo"],
+  "sauce:sriracha_mayo": ["sauce:mayo", "sauce:ranch", "sauce:no_sauce", "sauce:buffalo", "sauce:fig_jam"],
+  "sauce:ranch": [
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:no_sauce",
+    "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar",
+    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  // None = clears real sauces
+  "sauce:no_sauce": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch",
+  ],
 
-  // ── TOPPINGS vs SAUCE ──
-  "topping:capers": ["sauce:bbq", "sauce:hot_honey", "sauce:fig_jam", "sauce:marinara", "sauce:buffalo"],
-  "topping:pepperoni": ["sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:buffalo"],
+  // ── MUSTARD ──
+  "mustard:chipotle_cerveza": [
+    "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar", "sauce:buffalo", "sauce:ranch",
+  ],
+  "mustard:lemon_garlic": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:ranch",
+  ],
+  "mustard:stout_beer": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:ranch",
+  ],
 
-  // ── MUSTARD vs SAUCE ──
-  "mustard:chipotle_cerveza": ["sauce:fig_jam", "sauce:mango_achar", "sauce:ranch"],
-  "mustard:lemon_garlic": ["sauce:bbq", "sauce:marinara", "sauce:green_chili_achar"],
-  "mustard:stout_beer": ["sauce:marinara", "sauce:fig_jam", "sauce:ranch", "sauce:buffalo"],
-};
-
-// Clash reasons for tooltip
-const CLASH_REASONS = {
-  "topping:capers": "Capers clash with sweet sauces",
-  "topping:pepperoni": "Pepperoni works best with marinara/BBQ",
-  "sauce:bbq": "Too heavy — let this cheese shine",
-  "sauce:marinara": "Too heavy — let this cheese shine",
-  "sauce:buffalo": "Too heavy — let this cheese shine",
-  "sauce:hot_honey": "Too heavy — let this cheese shine",
-  "sauce:fig_jam": "Flavor clash — too much going on",
-  "sauce:mango_achar": "Flavor clash",
-  "sauce:green_chili_achar": "Flavor clash",
-  "sauce:ranch": "Won't complement this mustard",
-  "mustard:chipotle_cerveza": "Wrong vibe for this sauce",
-  "mustard:lemon_garlic": "Wrong vibe for this sauce",
-  "mustard:stout_beer": "Wrong vibe for this sauce",
+  // ── TOPPINGS ──
+  "topping:capers": [
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "cheese:honey_gouda", "cheese:sharp_cheddar",
+    "topping:egg", "topping:pepperoni",
+  ],
+  "topping:pepperoni": [
+    "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
+    "topping:capers", "topping:egg",
+    "mustard:lemon_garlic", "mustard:stout_beer",
+  ],
+  "topping:egg": [
+    "base:roll",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:green_chili_achar",
+    "topping:pepperoni", "topping:capers",
+  ],
+  "topping:french_onions": [
+    "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar",
+  ],
+  "topping:lil_mamas": ["sauce:buffalo"],
 };
 
 function getGreyedOut(selections) {
@@ -168,7 +237,6 @@ function getGreyedOut(selections) {
     if (!val) continue;
     const values = Array.isArray(val) ? val : [val];
     for (const v of values) {
-      if (v.startsWith("no_")) continue;
       const key = `${catId}:${v}`;
       if (CLASHES[key]) {
         CLASHES[key].forEach((c) => greyed.add(c));
@@ -176,6 +244,24 @@ function getGreyedOut(selections) {
     }
   }
   return greyed;
+}
+
+// Return the label of the first selected item whose clash list blocks this one
+function findClashCulprit(catId, itemId, selections) {
+  const target = `${catId}:${itemId}`;
+  for (const [selCat, val] of Object.entries(selections)) {
+    if (!val) continue;
+    const values = Array.isArray(val) ? val : [val];
+    for (const v of values) {
+      const selKey = `${selCat}:${v}`;
+      if (CLASHES[selKey]?.includes(target)) {
+        const cat = BUILD_CATEGORIES.find((c) => c.id === selCat);
+        const item = cat?.items.find((i) => i.id === v);
+        return item?.label ?? v;
+      }
+    }
+  }
+  return null;
 }
 
 /* ─── SHARED COMPONENTS ─── */
@@ -350,11 +436,13 @@ export default function SandwichCheatSheet() {
                     const isSelected = cat.multi
                       ? (selections[cat.id] || []).includes(item.id)
                       : selections[cat.id] === item.id;
+                    const culprit = isClash ? findClashCulprit(cat.id, item.id, selections) : null;
 
                     return (
                       <button
                         key={item.id}
                         onClick={() => !isClash && handleSelect(cat.id, item.id, cat.multi)}
+                        title={culprit ? `Clashes with ${culprit}` : undefined}
                         style={{
                           padding: "10px 16px",
                           borderRadius: 10,

@@ -190,14 +190,14 @@ const CLASHES = {
   "base:sandwich_bread": ["sauce:buffalo"],
   "base:sourdough": [],
   "base:ciabatta": ["sauce:buffalo", "topping:egg", "topping:pastrami"],
-  "base:brioche_bun": ["sauce:buffalo", "sauce:garlic_butter", "topping:capers"],
-  "base:pretzel_roll": ["sauce:marinara", "sauce:pesto", "sauce:garlic_butter", "topping:egg"],
+  "base:brioche_bun": ["sauce:buffalo", "topping:capers"],
+  "base:pretzel_roll": ["sauce:marinara", "sauce:pesto", "topping:egg"],
   "base:baguette": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "topping:egg"],
   "base:croissant": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto", "sauce:garlic_butter",
+    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto",
     "topping:pepperoni", "topping:capers", "topping:pastrami",
   ],
-  "base:muffin": ["sauce:garlic_butter"],
+  "base:muffin": [],
 
   // ── CHEESE ──
   "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto"],
@@ -232,7 +232,7 @@ const CLASHES = {
   ],
   "cheese:feta": [                                                                                    // Greek/Mediterranean brined — cuisine coherence
     "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
-    "sauce:ranch", "sauce:sriracha_mayo", "sauce:garlic_butter",
+    "sauce:ranch", "sauce:sriracha_mayo",
     "topping:pepperoni", "topping:pastrami",
     "mustard:chipotle_cerveza", "mustard:stout_beer",
   ],
@@ -330,10 +330,10 @@ const CLASHES = {
   "sauce:garlic_butter": [
     "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",  // sweet/American/Asian leads fight Italian-garlic profile
     "sauce:aioli",                                                                                    // double garlic = overwhelming
-    "sauce:ranch", "sauce:sriracha_mayo",                                                             // fat on fat, wrong cuisine
-    "cheese:honey_gouda", "cheese:feta",                                                              // cuisine/flavor mismatch
+    "sauce:ranch", "sauce:sriracha_mayo",                                                             // profile mismatch
+    "cheese:honey_gouda",                                                                             // sweet cheese vs savory garlic clash
     "mustard:chipotle_cerveza", "mustard:lemon_garlic",                                               // wrong cuisine / redundant garlic
-    "base:brioche_bun", "base:croissant", "base:pretzel_roll", "base:muffin",                        // already enriched/sweet/salted — don't garlic-butter them
+    // No base blocks — garlic-buttering brioche/croissant/pretzel/muffin are all real things
   ],
 
   // ── MUSTARD ──

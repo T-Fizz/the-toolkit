@@ -1,0 +1,10 @@
+workspace:
+    name: the-toolkit
+    ignore:
+        - vendor/
+        - node_modules/
+        - .git/
+    settings:
+        parallel: true
+    ai:
+        agent: claude

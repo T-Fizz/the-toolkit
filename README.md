@@ -1,6 +1,6 @@
 # The Toolkit
 
-A small, growing collection of personal tools. Vite + React + Tailwind v4, managed with [Takumi](https://github.com/takumi-build/takumi).
+A small, growing collection of personal tools. Vite + React + Tailwind v4.
 
 ## Structure
 
@@ -16,11 +16,11 @@ src/
 ## Develop
 
 ```bash
-takumi build        # vite build
-npm run dev         # vite dev server
+npm install
+npm run dev
 ```
 
 ## Add a new tool
 
 1. Create `src/apps/<name>/index.jsx` exporting a default React component.
-2. Import it in `src/App.jsx` and add to the `apps` list + `<Routes>`.
+2. Import it in `src/App.jsx` and add an entry to the `apps` list + a `<Route>`.

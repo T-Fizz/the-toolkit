@@ -12,9 +12,11 @@ dist
 dist-ssr
 *.local
 
-# Takumi local state
-.takumi/cache/
-.takumi/metrics.json
+# Takumi (local-only)
+.takumi/
+takumi.yaml
+takumi-pkg.yaml
+CLAUDE.md
 
 # Editor directories and files
 .vscode/*

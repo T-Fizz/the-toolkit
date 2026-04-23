@@ -258,12 +258,17 @@ export default function SandwichCheatSheet() {
                 );
               };
 
-              const hasGroups = cat.items.some((i) => i.group);
+              const hasGroups = cat.items.some((i) => typeof i.group === "string" && i.group.trim());
               let itemsContent;
               if (hasGroups) {
                 const groupMap = new Map();
+                // Hard-lock: any item without a real, non-empty group name gets
+                // bucketed with the first valid group instead of rendering under
+                // an empty/blank header. New ingredients must declare a group.
+                const firstGroup = cat.items.find((i) => typeof i.group === "string" && i.group.trim())?.group;
                 cat.items.forEach((item) => {
-                  const g = item.group || "";
+                  const valid = typeof item.group === "string" && item.group.trim();
+                  const g = valid ? item.group : firstGroup;
                   if (!groupMap.has(g)) groupMap.set(g, []);
                   groupMap.get(g).push(item);
                 });

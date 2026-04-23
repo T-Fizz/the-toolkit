@@ -6,6 +6,16 @@ import RadarChart from "./RadarChart.jsx";
 
 const STORAGE_KEY = "cocktail-bar-v1";
 
+// Hard-lock filter for tag labels — keeps junk values ("", null, undefined,
+// whitespace, "untagged") from ever reaching the UI.
+function isValidTag(t) {
+  if (typeof t !== "string") return false;
+  const trimmed = t.trim();
+  if (!trimmed) return false;
+  if (trimmed.toLowerCase() === "untagged") return false;
+  return true;
+}
+
 function loadBar() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -45,14 +55,20 @@ export default function CocktailBuilder() {
     });
   };
 
+  // Hard-lock: only real, non-empty, non-placeholder tags make it into the filter set.
+  // Anything falsy, non-string, whitespace-only, or literally "untagged" is dropped.
   const allTags = useMemo(() => {
     const s = new Set();
-    for (const r of canMake) for (const t of r.recipe.tags ?? []) s.add(t);
+    for (const r of canMake) {
+      for (const t of r.recipe.tags ?? []) {
+        if (isValidTag(t)) s.add(t);
+      }
+    }
     return [...s].sort();
   }, [canMake]);
 
   const filteredCanMake = filterTag
-    ? canMake.filter((r) => (r.recipe.tags ?? []).includes(filterTag))
+    ? canMake.filter((r) => (r.recipe.tags ?? []).filter(isValidTag).includes(filterTag))
     : canMake;
 
   const TABS = [
@@ -324,7 +340,7 @@ function RecipeCard({ recipe, substitutes, isExpanded, onToggle, bar }) {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6 }}>Profile</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {(recipe.tags ?? []).map((t) => (
+                {(recipe.tags ?? []).filter(isValidTag).map((t) => (
                   <span key={t} style={{
                     background: "#2A2418", border: "1px solid #3D3020",
                     color: "#B8956A", padding: "2px 8px", borderRadius: 10,

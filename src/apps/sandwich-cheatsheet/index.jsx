@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { BUILD_CATEGORIES, INGREDIENTS, getIngredient } from "./ingredients.js";
+import { getGreyedOut, findClashReason, getFlavorProfile, suggestNext } from "./scoring.js";
+import "./canonical.js"; // side-effect: validates canonical sandwiches at load
+import RadarChart from "./RadarChart.jsx";
 
 /* ─── DATA: PRESET SANDWICHES ─── */
 const SANDWICHES = [
@@ -13,6 +17,7 @@ const SANDWICHES = [
   { name: "Breakfast Melt", vibe: "Morning Hero", emoji: "🍳", base: "English Muffin", cheese: "Comté or Raclette", sauce: "Red Hot or Mango Achar", mustard: null, toppings: ["Fried Egg"], achar: "Hot Mango (thin smear, optional)", method: "Fry egg. Toast muffin. Chicken + cheese on muffin, air fry until melted. Stack egg on top.", tip: "Runny yolk IS the sauce. The achar version is the sleeper best thing on the whole list.", color: "#E8A317", bg: "#FFFCF0" },
   { name: "Mini Pizza Muffin", vibe: "Snack Attack", emoji: "🧁", base: "English Muffin", cheese: "Raclette", sauce: "Marinara", mustard: null, toppings: ["Pepperoni", "Pickled Jalapeños"], achar: null, method: "Open-faced. Marinara, chicken, pepperoni, cheese. Air fry 375°F, 3-4 min.", tip: "These are dangerous. You'll eat four before you realize it.", color: "#C41E3A", bg: "#FFF5F5" },
   { name: "Buffalo Ranch", vibe: "The Fallback", emoji: "🦬", base: "Roll or Muffin", cheese: "Any", sauce: "Red Hot + Butter (melted together)", mustard: null, toppings: ["Ranch", "Dill Pickles"], achar: null, method: "Melt butter, stir in red hot. Toss chicken. Pile on roll + cheese. Air fry. Ranch + pickles after.", tip: "You already know this one. It never misses.", color: "#E85D26", bg: "#FFF6F0" },
+  { name: "Galbi Cheesesteak", vibe: "Korean-American", emoji: "🥩", base: "Brioche Bun", cheese: "Provolone or Pepper Jack", sauce: "Sriracha Mayo (gochujang mayo is even better)", mustard: null, toppings: ["Shaved Steak", "Pickled Red Onion", "Lettuce"], achar: null, method: "Marinate shaved steak in soy + brown sugar + garlic + sesame + grated pear (or buy pre-marinated galbi). Sear hot, fast. Pile on brioche with cheese, broil briefly to melt. Sriracha mayo + pickled onion + lettuce after.", tip: "The pear in the marinade is the tenderizing secret. Don't skip it.", color: "#8B3A3A", bg: "#FDF5F5" },
 ];
 
 const PANTRY = {
@@ -27,12 +32,12 @@ const PANTRY = {
   "MarketSpice Mustards": ["Chipotle Cerveza", "Hefeweizen Lemon & Garlic", "Stout Beer"],
   "Achars & Spreads": ["Hot Mango Achar", "Green Chili Achar", "Fig Jam (buy this!)", "Wildflower Honey"],
   "Toppings": ["Lil Mama's Peppers", "French Fried Onions", "Dill Pickles", "Pickled Jalapeños", "Capers"],
-  "Meats (pick one headliner)": ["Rotisserie Chicken", "Deli Turkey", "Bacon", "Pepperoni", "Prosciutto", "Pastrami"],
+  "Meats (pick one headliner)": ["Rotisserie Chicken", "Deli Turkey", "Shaved Steak", "Bacon", "Pepperoni", "Prosciutto", "Pastrami"],
   "Protein (other)": ["Eggs"],
 };
 
 const RULES = [
-  { label: "ALWAYS", text: "Warm hot meat (chicken, turkey, pastrami) in the sauce first — don't pile cold" },
+  { label: "ALWAYS", text: "Warm hot meat (chicken, turkey, pastrami, steak) in the sauce first — don't pile cold" },
   { label: "ALWAYS", text: "Add crunchy toppings AFTER air frying — they'll blow around" },
   { label: "ALWAYS", text: "Air fry at 375°F, 3-4 min — watch the cheese, pull when bubbly" },
   { label: "PAIR", text: "Mango Achar → cheese-forward subs (Comté, Raclette)" },
@@ -41,414 +46,11 @@ const RULES = [
   { label: "PAIR", text: "Lemon & Garlic → Beecher's, Comté, lighter builds" },
   { label: "PAIR", text: "Stout Beer → French onion, Dubliner, pastrami" },
   { label: "PAIR", text: "Prosciutto → fig jam, pesto, arugula, brie" },
+  { label: "PAIR", text: "Shaved Steak → provolone, pepper jack, french onions, sriracha mayo" },
   { label: "NEVER", text: "Capers on BBQ builds — they clash with sweetness" },
   { label: "NEVER", text: "Drown Beecher's or Dubliner in heavy sauce — let the cheese star" },
   { label: "NEVER", text: "Two headliner meats on one sandwich (chicken + pastrami, etc.)" },
 ];
-
-/* ─── BUILD YOUR OWN: OPTIONS + CLASH SYSTEM ─── */
-const BUILD_CATEGORIES = [
-  {
-    id: "base",
-    label: "Base",
-    multi: false,
-    items: [
-      { id: "roll", label: "Sandwich Roll" },
-      { id: "sandwich_bread", label: "Sandwich Bread" },
-      { id: "sourdough", label: "Sourdough" },
-      { id: "ciabatta", label: "Ciabatta" },
-      { id: "brioche_bun", label: "Brioche Bun" },
-      { id: "pretzel_roll", label: "Pretzel Roll" },
-      { id: "baguette", label: "Baguette" },
-      { id: "croissant", label: "Croissant" },
-      { id: "muffin", label: "English Muffin" },
-    ],
-  },
-  {
-    id: "cheese",
-    label: "Cheese",
-    multi: true,
-    items: [
-      // Aged & Sharp
-      { id: "beechers", label: "Beecher's Aged", group: "Aged & Sharp" },
-      { id: "dubliner", label: "Dubliner", group: "Aged & Sharp" },
-      { id: "sharp_cheddar", label: "Extra Sharp Cheddar", group: "Aged & Sharp" },
-      { id: "aged_gouda", label: "Aged Gouda", group: "Aged & Sharp" },
-      { id: "manchego", label: "Manchego", group: "Aged & Sharp" },
-      { id: "parmigiano", label: "Parmigiano", group: "Aged & Sharp" },
-      // Alpine & Nutty
-      { id: "comte", label: "Comté", group: "Alpine & Nutty" },
-      { id: "gruyere", label: "Gruyère", group: "Alpine & Nutty" },
-      // Classic Melters
-      { id: "raclette", label: "Raclette", group: "Classic Melters" },
-      { id: "mozzarella", label: "Mozzarella", group: "Classic Melters" },
-      { id: "provolone", label: "Provolone", group: "Classic Melters" },
-      { id: "havarti", label: "Havarti", group: "Classic Melters" },
-      { id: "monterey_jack", label: "Monterey Jack", group: "Classic Melters" },
-      // Mild & Sweet
-      { id: "honey_gouda", label: "Honey Gouda", group: "Mild & Sweet" },
-      { id: "std_gouda", label: "Standard Gouda", group: "Mild & Sweet" },
-      { id: "brie", label: "Brie", group: "Mild & Sweet" },
-      // Flavored & Specialty
-      { id: "red_dragon", label: "Red Dragon", group: "Flavored & Specialty" },
-      { id: "pepper_jack", label: "Pepper Jack", group: "Flavored & Specialty" },
-      { id: "goat_cheese", label: "Goat Cheese", group: "Flavored & Specialty" },
-      { id: "gorgonzola", label: "Gorgonzola", group: "Flavored & Specialty" },
-      { id: "feta", label: "Feta", group: "Flavored & Specialty" },
-    ],
-  },
-  {
-    id: "sauce",
-    label: "Sauce / Spread",
-    multi: true,
-    items: [
-      // Leads
-      { id: "bbq", label: "Kinder's BBQ", group: "Lead" },
-      { id: "marinara", label: "Marinara", group: "Lead" },
-      { id: "buffalo", label: "Buffalo (Red Hot + Butter)", group: "Lead" },
-      { id: "hot_honey", label: "Hot Honey", group: "Lead" },
-      { id: "fig_jam", label: "Fig Jam", group: "Lead" },
-      { id: "mango_achar", label: "Hot Mango Achar", group: "Lead" },
-      { id: "green_chili_achar", label: "Green Chili Achar", group: "Lead" },
-      { id: "pesto", label: "Pesto", group: "Lead" },
-      // Creamy
-      { id: "mayo", label: "Mayo", group: "Creamy" },
-      { id: "aioli", label: "Aioli (garlic mayo)", group: "Creamy" },
-      { id: "sriracha_mayo", label: "Sriracha Mayo", group: "Creamy" },
-      { id: "ranch", label: "Ranch", group: "Creamy" },
-      // Butter (bread treatment — goes on the bread, not the chicken)
-      { id: "garlic_butter", label: "Garlic Butter", group: "Butter (bread treatment)" },
-      // None
-      { id: "no_sauce", label: "None (let cheese star)", group: "None" },
-    ],
-  },
-  {
-    id: "mustard",
-    label: "Mustard",
-    multi: false,
-    items: [
-      { id: "chipotle_cerveza", label: "Chipotle Cerveza" },
-      { id: "lemon_garlic", label: "Lemon & Garlic" },
-      { id: "stout_beer", label: "Stout Beer" },
-      { id: "no_mustard", label: "None" },
-    ],
-  },
-  {
-    id: "topping",
-    label: "Toppings",
-    multi: true,
-    items: [
-      // Fresh Veg & Greens
-      { id: "tomato", label: "Tomato Slices", group: "Fresh Veg & Greens" },
-      { id: "arugula", label: "Arugula", group: "Fresh Veg & Greens" },
-      { id: "lettuce", label: "Lettuce", group: "Fresh Veg & Greens" },
-      { id: "avocado", label: "Avocado", group: "Fresh Veg & Greens" },
-      { id: "roasted_red_pepper", label: "Roasted Red Pepper", group: "Fresh Veg & Greens" },
-      // Pickled & Brined
-      { id: "lil_mamas", label: "Lil Mama's Peppers", group: "Pickled & Brined" },
-      { id: "pickled_red_onion", label: "Pickled Red Onion", group: "Pickled & Brined" },
-      { id: "french_onions", label: "French Fried Onions", group: "Pickled & Brined" },
-      { id: "dill_pickles", label: "Dill Pickles", group: "Pickled & Brined" },
-      { id: "pickled_japs", label: "Pickled Jalapeños", group: "Pickled & Brined" },
-      { id: "capers", label: "Capers", group: "Pickled & Brined" },
-      // Meat
-      { id: "chicken", label: "Chicken", group: "Meat" },
-      { id: "turkey", label: "Turkey", group: "Meat" },
-      { id: "bacon", label: "Bacon", group: "Meat" },
-      { id: "pepperoni", label: "Pepperoni", group: "Meat" },
-      { id: "prosciutto", label: "Prosciutto", group: "Meat" },
-      { id: "pastrami", label: "Pastrami", group: "Meat" },
-      // Egg
-      { id: "egg", label: "Fried Egg", group: "Egg" },
-    ],
-  },
-];
-
-/*
- * CLASHES — food-theory rules (research-backed: Flavor Bible, Food52, Serious Eats,
- * cheese authority guides, Nashville + Korean chicken-sandwich traditions).
- * Each entry: "category:item" → [items it blocks]. Symmetric: A blocks B iff B blocks A.
- *
- * Principles:
- *  1. One lead sauce per sandwich (leads block leads).
- *  2. Creamy binders block each other; each pairs only with leads whose profile matches.
- *  3. Aged/strong cheeses don't get drowned in heavy wet sauces.
- *  4. Pre-sweet cheese (honey gouda) doesn't stack with sweet/sweet-smoky sauces (incl. BBQ).
- *  5. Pepperoni → marinara/BBQ country only.
- *  6. Capers need clean/bright backdrops.
- *  7. Fried egg on breakfast-compatible bases only (blocks ciabatta/baguette/pretzel).
- *  8. Each mustard has a flavor lane (chipotle=BBQ/achar, lemon garlic=bright, stout=dark savory).
- *  9. Selecting "None" blocks every real option in that category.
- * 10. Pesto = Italian herb lead — mozz/goat cheese/tomato/arugula; fights BBQ/aged-British/Asian.
- * 11. Aioli = garlic-mayo Mediterranean lane — blocks other creamies and bold American leads.
- * 12. Bread structure: open-crumb (ciabatta) and crispy-shell (baguette) can't hold wet hot sauce.
- * 13. Cuisine coherence: feta rejects American/Asian sauces; parmigiano rejects non-Italian.
- */
-const CLASHES = {
-  // ── BASE ──
-  "base:roll": [],
-  "base:sandwich_bread": ["sauce:buffalo"],
-  "base:sourdough": [],
-  "base:ciabatta": ["sauce:buffalo", "topping:egg", "topping:pastrami"],
-  "base:brioche_bun": ["sauce:buffalo", "topping:capers"],
-  "base:pretzel_roll": ["sauce:marinara", "sauce:pesto", "topping:egg"],
-  "base:baguette": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "topping:egg"],
-  "base:croissant": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto",
-    "topping:pepperoni", "topping:capers", "topping:pastrami",
-  ],
-  "base:muffin": [],
-
-  // ── CHEESE ──
-  "cheese:beechers": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto"],
-  "cheese:dubliner": ["sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto"],
-  "cheese:sharp_cheddar": ["sauce:pesto"],
-  "cheese:aged_gouda": ["sauce:marinara", "sauce:buffalo", "sauce:green_chili_achar", "sauce:pesto"],
-  "cheese:manchego": ["sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar"],
-  "cheese:parmigiano": [
-    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "sauce:sriracha_mayo", "sauce:ranch",
-    "topping:avocado",
-  ],
-  "cheese:comte": [],
-  "cheese:gruyere": [],
-  "cheese:raclette": [],
-  "cheese:mozzarella": ["sauce:bbq", "sauce:buffalo", "topping:pastrami"],
-  "cheese:provolone": [],
-  "cheese:havarti": [],
-  "cheese:monterey_jack": [],
-  "cheese:honey_gouda": [
-    "sauce:bbq", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:pesto", "sauce:garlic_butter",
-    "topping:tomato", "topping:arugula", "topping:roasted_red_pepper", "topping:capers",
-  ],
-  "cheese:std_gouda": [],
-  "cheese:brie": ["sauce:bbq", "sauce:buffalo", "sauce:marinara", "sauce:green_chili_achar", "topping:pepperoni"],
-  "cheese:red_dragon": ["sauce:pesto"],
-  "cheese:pepper_jack": ["sauce:buffalo", "sauce:green_chili_achar"],
-  "cheese:goat_cheese": ["sauce:bbq", "sauce:buffalo", "topping:pepperoni"],
-  "cheese:gorgonzola": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:green_chili_achar", "sauce:pesto",
-    "topping:avocado",
-  ],
-  "cheese:feta": [                                                                                    // Greek/Mediterranean brined — cuisine coherence
-    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
-    "sauce:ranch", "sauce:sriracha_mayo",
-    "topping:pepperoni", "topping:pastrami",
-    "mustard:chipotle_cerveza", "mustard:stout_beer",
-  ],
-
-  // ── SAUCES ──
-  "sauce:bbq": [
-    "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:aioli", "sauce:garlic_butter",
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:goat_cheese", "cheese:gorgonzola", "cheese:honey_gouda", "cheese:feta",
-    "topping:capers", "topping:egg", "topping:arugula", "topping:roasted_red_pepper", "topping:prosciutto",
-    "mustard:lemon_garlic", "mustard:stout_beer",
-    "base:baguette", "base:croissant",
-  ],
-  "sauce:marinara": [
-    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:brie", "cheese:gorgonzola",
-    "topping:capers", "topping:french_onions", "topping:egg", "topping:turkey", "topping:pastrami",
-    "mustard:lemon_garlic", "mustard:stout_beer", "mustard:chipotle_cerveza",
-    "base:pretzel_roll", "base:croissant", "base:baguette",
-  ],
-  "sauce:buffalo": [
-    "sauce:bbq", "sauce:marinara", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:aioli", "sauce:garlic_butter",
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:mozzarella", "cheese:brie", "cheese:pepper_jack", "cheese:goat_cheese", "cheese:gorgonzola", "cheese:feta",
-    "topping:capers", "topping:pepperoni", "topping:egg", "topping:lil_mamas", "topping:tomato", "topping:arugula", "topping:roasted_red_pepper", "topping:prosciutto",
-    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
-    "base:sandwich_bread", "base:ciabatta", "base:brioche_bun", "base:baguette", "base:croissant",
-  ],
-  "sauce:hot_honey": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch", "sauce:garlic_butter",
-    "cheese:beechers", "cheese:dubliner", "cheese:honey_gouda", "cheese:parmigiano", "cheese:gorgonzola",
-    "topping:capers", "topping:pepperoni", "topping:egg", "topping:tomato",
-    "mustard:lemon_garlic", "mustard:stout_beer",
-  ],
-  "sauce:fig_jam": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch", "sauce:garlic_butter",
-    "cheese:honey_gouda", "cheese:parmigiano",
-    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:avocado", "topping:egg",
-    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
-  ],
-  "sauce:mango_achar": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli", "sauce:garlic_butter",
-    "cheese:honey_gouda", "cheese:parmigiano", "cheese:feta",
-    "topping:capers", "topping:pepperoni", "topping:french_onions", "topping:tomato", "topping:arugula", "topping:avocado", "topping:turkey", "topping:prosciutto", "topping:pastrami",
-    "mustard:stout_beer",
-  ],
-  "sauce:green_chili_achar": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:pesto", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli", "sauce:garlic_butter",
-    "cheese:beechers", "cheese:dubliner", "cheese:aged_gouda", "cheese:manchego", "cheese:parmigiano", "cheese:brie", "cheese:pepper_jack", "cheese:gorgonzola", "cheese:feta",
-    "topping:capers", "topping:pepperoni", "topping:egg", "topping:arugula", "topping:roasted_red_pepper", "topping:avocado", "topping:turkey", "topping:prosciutto", "topping:pastrami",
-    "mustard:lemon_garlic", "mustard:stout_beer",
-    "base:croissant",
-  ],
-  "sauce:pesto": [                                                                                    // Italian basil-olive oil-pine-nut-parm lead
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:no_sauce",
-    "sauce:sriracha_mayo", "sauce:ranch",
-    "cheese:beechers", "cheese:dubliner", "cheese:sharp_cheddar", "cheese:aged_gouda", "cheese:honey_gouda", "cheese:red_dragon", "cheese:gorgonzola",
-    "topping:turkey", "topping:pastrami",
-    "mustard:chipotle_cerveza", "mustard:stout_beer",
-    "base:pretzel_roll", "base:croissant",
-  ],
-  // Creamy binders
-  "sauce:mayo": ["sauce:sriracha_mayo", "sauce:ranch", "sauce:aioli", "sauce:no_sauce", "sauce:buffalo"],
-  "sauce:aioli": [                                                                                    // garlic mayo — Mediterranean lane
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:ranch", "sauce:no_sauce",
-    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
-    "sauce:garlic_butter",                                                                            // double garlic = overwhelming
-    "mustard:lemon_garlic", "mustard:stout_beer",
-  ],
-  "sauce:sriracha_mayo": [
-    "sauce:mayo", "sauce:ranch", "sauce:aioli", "sauce:no_sauce",
-    "sauce:buffalo", "sauce:fig_jam", "sauce:marinara", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:hot_honey", "sauce:pesto",
-    "sauce:garlic_butter",
-    "cheese:parmigiano", "cheese:feta",
-    "topping:turkey", "topping:prosciutto", "topping:pastrami",
-  ],
-  "sauce:ranch": [
-    "sauce:mayo", "sauce:sriracha_mayo", "sauce:aioli", "sauce:no_sauce",
-    "sauce:marinara", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto",
-    "sauce:garlic_butter",
-    "cheese:parmigiano", "cheese:feta",
-    "topping:prosciutto", "topping:pastrami",
-    "mustard:chipotle_cerveza", "mustard:lemon_garlic", "mustard:stout_beer",
-  ],
-  "sauce:no_sauce": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:pesto",
-    "sauce:mayo", "sauce:aioli", "sauce:sriracha_mayo", "sauce:ranch",
-  ],
-  // Butter — turns the bread itself into garlic bread. Italian/pizza-sub territory; lives ON the bread not IN the sandwich
-  "sauce:garlic_butter": [
-    "sauce:bbq", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",  // sweet/American/Asian leads fight Italian-garlic profile
-    "sauce:aioli",                                                                                    // double garlic = overwhelming
-    "sauce:ranch", "sauce:sriracha_mayo",                                                             // profile mismatch
-    "cheese:honey_gouda",                                                                             // sweet cheese vs savory garlic clash
-    "mustard:chipotle_cerveza", "mustard:lemon_garlic",                                               // wrong cuisine / redundant garlic
-    // No base blocks — garlic-buttering brioche/croissant/pretzel/muffin are all real things
-  ],
-
-  // ── MUSTARD ──
-  "mustard:chipotle_cerveza": [
-    "sauce:marinara", "sauce:fig_jam", "sauce:buffalo", "sauce:ranch", "sauce:pesto", "sauce:garlic_butter",
-    "cheese:feta",
-    "topping:prosciutto",
-  ],
-  "mustard:lemon_garlic": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:green_chili_achar", "sauce:ranch", "sauce:aioli", "sauce:garlic_butter",
-    "topping:pepperoni",
-  ],
-  "mustard:stout_beer": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar", "sauce:ranch", "sauce:pesto", "sauce:aioli",
-    "cheese:feta",
-    "topping:pepperoni", "topping:prosciutto",
-  ],
-
-  // ── TOPPINGS ──
-  "topping:capers": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:honey_gouda",
-    "topping:egg", "topping:pepperoni",
-    "base:brioche_bun", "base:croissant",
-  ],
-  "topping:pepperoni": [
-    "sauce:buffalo", "sauce:hot_honey", "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:brie", "cheese:goat_cheese", "cheese:feta",
-    "topping:capers", "topping:egg", "topping:roasted_red_pepper", "topping:turkey", "topping:pastrami", "topping:prosciutto",
-    "mustard:lemon_garlic", "mustard:stout_beer",
-    "base:croissant",
-  ],
-  "topping:egg": [
-    "sauce:bbq", "sauce:marinara", "sauce:buffalo", "sauce:fig_jam", "sauce:green_chili_achar",
-    "topping:pepperoni", "topping:capers",
-    "base:ciabatta", "base:pretzel_roll", "base:baguette",
-  ],
-  "topping:french_onions": [
-    "sauce:marinara", "sauce:fig_jam", "sauce:mango_achar",
-    "topping:pickled_red_onion", "topping:arugula",
-  ],
-  "topping:lil_mamas": ["sauce:buffalo", "topping:roasted_red_pepper"],                             // both are sweet-pickled peppers — redundant on one sandwich
-  // Fresh Veg & Greens
-  "topping:tomato": [                                                                                 // sweet/acidic fresh fruit — wrong with sweet-hot or sweet-smoky sauces
-    "sauce:buffalo", "sauce:fig_jam", "sauce:hot_honey", "sauce:mango_achar",
-    "cheese:honey_gouda",
-  ],
-  "topping:arugula": [                                                                                // peppery bitter green — heat/smoke flatten the pepper note
-    "sauce:bbq", "sauce:buffalo", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:honey_gouda",
-    "topping:french_onions",
-  ],
-  "topping:lettuce": [],                                                                              // neutral — pairs with almost anything
-  "topping:avocado": [
-    "sauce:fig_jam", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:parmigiano", "cheese:gorgonzola",
-  ],
-  "topping:roasted_red_pepper": [                                                                     // Mediterranean — wants goat cheese / pesto / feta
-    "sauce:bbq", "sauce:buffalo", "sauce:green_chili_achar",
-    "cheese:honey_gouda",
-    "topping:pepperoni", "topping:lil_mamas",
-  ],
-  "topping:pickled_red_onion": ["topping:french_onions"],
-  // Meat — one headliner per sandwich; club-style exceptions noted in code (chicken + bacon OK)
-  "topping:bacon": [],                                                                                // universal
-  "topping:chicken": ["topping:turkey", "topping:pastrami", "topping:prosciutto"],                  // pick ONE headliner meat
-  "topping:turkey": [
-    "topping:chicken", "topping:pepperoni", "topping:prosciutto", "topping:pastrami",
-    "sauce:marinara", "sauce:pesto", "sauce:sriracha_mayo", "sauce:mango_achar", "sauce:green_chili_achar",
-  ],
-  "topping:prosciutto": [                                                                             // cured Italian — fig/pesto/arugula/brie territory; still a headliner
-    "topping:chicken", "topping:turkey", "topping:pastrami", "topping:pepperoni",
-    "sauce:bbq", "sauce:buffalo", "sauce:ranch", "sauce:sriracha_mayo", "sauce:mango_achar", "sauce:green_chili_achar",
-    "mustard:chipotle_cerveza", "mustard:stout_beer",
-  ],
-  "topping:pastrami": [                                                                               // NY deli — rye/stout mustard/swiss territory
-    "topping:chicken", "topping:turkey", "topping:prosciutto", "topping:pepperoni",
-    "sauce:pesto", "sauce:marinara", "sauce:sriracha_mayo", "sauce:ranch", "sauce:mango_achar", "sauce:green_chili_achar",
-    "cheese:mozzarella", "cheese:feta",
-    "base:croissant", "base:ciabatta",
-  ],
-};
-
-function getGreyedOut(selections) {
-  const greyed = new Set();
-  for (const [catId, val] of Object.entries(selections)) {
-    if (!val) continue;
-    const values = Array.isArray(val) ? val : [val];
-    for (const v of values) {
-      const key = `${catId}:${v}`;
-      if (CLASHES[key]) {
-        CLASHES[key].forEach((c) => greyed.add(c));
-      }
-    }
-  }
-  return greyed;
-}
-
-// Return the label of the first selected item whose clash list blocks this one
-function findClashCulprit(catId, itemId, selections) {
-  const target = `${catId}:${itemId}`;
-  for (const [selCat, val] of Object.entries(selections)) {
-    if (!val) continue;
-    const values = Array.isArray(val) ? val : [val];
-    for (const v of values) {
-      const selKey = `${selCat}:${v}`;
-      if (CLASHES[selKey]?.includes(target)) {
-        const cat = BUILD_CATEGORIES.find((c) => c.id === selCat);
-        const item = cat?.items.find((i) => i.id === v);
-        return item?.label ?? v;
-      }
-    }
-  }
-  return null;
-}
 
 /* ─── SHARED COMPONENTS ─── */
 function InfoBlock({ label, value, color }) {
@@ -482,9 +84,14 @@ export default function SandwichCheatSheet() {
 
   const resetBuild = () => setSelections({ base: null, cheese: [], sauce: [], mustard: null, topping: [] });
 
-  const hasSelections = selections.base || (selections.cheese && selections.cheese.length > 0) || (selections.sauce && selections.sauce.length > 0) || (selections.mustard && selections.mustard.length > 0) || (selections.topping && selections.topping.length > 0);
+  const hasSelections =
+    selections.base ||
+    (selections.cheese && selections.cheese.length > 0) ||
+    (selections.sauce && selections.sauce.length > 0) ||
+    (typeof selections.mustard === "string" && !selections.mustard.startsWith("no_")) ||
+    (selections.topping && selections.topping.length > 0);
 
-  // Build summary
+  // Build summary chips
   const getSummaryParts = () => {
     const parts = [];
     BUILD_CATEGORIES.forEach((cat) => {
@@ -492,7 +99,7 @@ export default function SandwichCheatSheet() {
       if (!val || (Array.isArray(val) && val.length === 0)) return;
       const values = Array.isArray(val) ? val : [val];
       values.forEach((v) => {
-        if (v.startsWith("no_")) return;
+        if (typeof v !== "string" || v.startsWith("no_")) return;
         const item = cat.items.find((i) => i.id === v);
         if (item) parts.push(item.label);
       });
@@ -612,12 +219,12 @@ export default function SandwichCheatSheet() {
                 const isSelected = cat.multi
                   ? (selections[cat.id] || []).includes(item.id)
                   : selections[cat.id] === item.id;
-                const culprit = isClash ? findClashCulprit(cat.id, item.id, selections) : null;
+                const reason = isClash ? findClashReason(cat.id, item.id, selections) : null;
                 return (
                   <button
                     key={item.id}
                     onClick={() => !isClash && handleSelect(cat.id, item.id, cat.multi)}
-                    title={culprit ? `Clashes with ${culprit}` : undefined}
+                    title={reason || undefined}
                     style={{
                       padding: "10px 16px",
                       borderRadius: 10,
@@ -700,7 +307,7 @@ export default function SandwichCheatSheet() {
               );
             })}
 
-            {/* Build Summary */}
+            {/* Build Summary + Radar + Method */}
             {hasSelections && (
               <div style={{
                 background: "#2A2418",
@@ -722,6 +329,56 @@ export default function SandwichCheatSheet() {
                     }}>{p}</span>
                   ))}
                 </div>
+
+                {/* Flavor Radar */}
+                <div style={{
+                  background: "#1A1A1A", borderRadius: 8, padding: 12, marginBottom: 10,
+                  border: "1px solid #333", display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  <RadarChart profile={getFlavorProfile(selections)} size={170} max={10} />
+                  <div style={{ flex: 1, fontFamily: "system-ui, sans-serif" }}>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6 }}>Flavor Profile</div>
+                    <div style={{ fontSize: 12, color: "#8A7B6B", lineHeight: 1.5 }}>
+                      Each axis is how intense that flavor is in your sandwich (0–10).
+                      Balanced builds hit a few axes moderately. One axis pegged ≥ 10 = overloaded.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suggest next */}
+                {getSummaryParts().length >= 2 && (() => {
+                  const suggestions = suggestNext(selections, 3);
+                  if (suggestions.length === 0) return null;
+                  return (
+                    <div style={{
+                      background: "#1A1A1A", borderRadius: 8, padding: 12, marginBottom: 10,
+                      border: "1px solid #333",
+                    }}>
+                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 8, fontFamily: "system-ui, sans-serif" }}>Goes well with</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {suggestions.map((s) => {
+                          const ing = getIngredient(s.id);
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => handleSelect(s.cat, s.id, s.cat !== "base" && s.cat !== "mustard")}
+                              style={{
+                                background: "#B8956A18", border: "1px dashed #B8956A66",
+                                color: "#E8D5A0", padding: "5px 12px", borderRadius: 20,
+                                fontSize: 12, fontFamily: "system-ui, sans-serif", cursor: "pointer",
+                              }}
+                            >
+                              + {s.label}
+                              <span style={{ color: "#8A7B6B", marginLeft: 4, fontSize: 10 }}>({ing?.cat})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Method */}
                 <div style={{
                   background: "#1A1A1A", borderRadius: 8, padding: 12,
                   border: "1px solid #333",
@@ -729,19 +386,17 @@ export default function SandwichCheatSheet() {
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: "#8A7B6B", marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>Method</div>
                   <div style={{ fontSize: 13, lineHeight: 1.6, color: "#C5B8A8", fontFamily: "system-ui, sans-serif" }}>
                     {(() => {
-                      const HOT_MEATS = ["chicken", "turkey", "pastrami"];
-                      const WARM_SAUCES = ["bbq", "marinara", "buffalo", "hot_honey"];               // sauces you actually toss the meat in
+                      const HOT_MEAT_IDS = ["chicken", "turkey", "pastrami", "shaved_steak"];
+                      const WARM_SAUCES = ["bbq", "marinara", "buffalo", "hot_honey"];
                       const topping = selections.topping || [];
                       const sauces = selections.sauce || [];
-                      const hotMeat = topping.find((t) => HOT_MEATS.includes(t));
-                      const toppingItems = BUILD_CATEGORIES.find((c) => c.id === "topping").items;
-                      const hotMeatLabel = hotMeat && toppingItems.find((i) => i.id === hotMeat)?.label.toLowerCase();
+                      const hotMeat = topping.find((t) => HOT_MEAT_IDS.includes(t));
+                      const hotMeatLabel = hotMeat && INGREDIENTS[hotMeat]?.label.toLowerCase();
                       const hasWarmSauce = sauces.some((s) => WARM_SAUCES.includes(s));
                       const hasGarlicButter = sauces.includes("garlic_butter");
-                      const baseItem = BUILD_CATEGORIES.find((c) => c.id === "base").items.find((i) => i.id === selections.base);
-                      const baseLabel = (baseItem?.label ?? "bread").toLowerCase();
+                      const baseLabel = (INGREDIENTS[selections.base]?.label ?? "bread").toLowerCase();
                       const hasCheese = (selections.cheese || []).length > 0;
-                      const coldToppings = topping.filter((t) => !HOT_MEATS.includes(t) && t !== "pepperoni");
+                      const coldToppings = topping.filter((t) => !HOT_MEAT_IDS.includes(t) && t !== "pepperoni");
                       const hasColdToppings = coldToppings.length > 0;
                       const mustardId = selections.mustard;
                       const hasMustard = typeof mustardId === "string" && !mustardId.startsWith("no_");
@@ -818,7 +473,7 @@ export default function SandwichCheatSheet() {
                 {[
                   { m: "Chipotle Cerveza", p: "BBQ sandwiches" },
                   { m: "Lemon & Garlic", p: "Beecher's, Comté, lighter builds" },
-                  { m: "Stout Beer", p: "French onion, Dubliner" },
+                  { m: "Stout Beer", p: "French onion, Dubliner, pastrami" },
                 ].map((x, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontFamily: "system-ui, sans-serif" }}>
                     <span style={{ color: "#D5CBC0", fontWeight: 600, minWidth: 110 }}>{x.m}</span>

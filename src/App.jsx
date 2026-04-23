@@ -1,5 +1,6 @@
 import { Routes, Route, Link } from 'react-router-dom'
 import SandwichCheatSheet from './apps/sandwich-cheatsheet/index.jsx'
+import CocktailBuilder from './apps/cocktail-builder/index.jsx'
 
 const TOOLS = [
   {
@@ -7,6 +8,12 @@ const TOOLS = [
     path: "/sandwich-cheatsheet",
     description: "Build a sandwich that actually works — food-theory clash detection",
     emoji: "🥪",
+  },
+  {
+    name: "Cocktail Builder",
+    path: "/cocktail-builder",
+    description: "Check what's in your bar, see what you can make tonight",
+    emoji: "🍸",
   },
 ]
 
@@ -132,6 +139,15 @@ export default function App() {
           <>
             <BackToHome />
             <SandwichCheatSheet />
+          </>
+        }
+      />
+      <Route
+        path="/cocktail-builder"
+        element={
+          <>
+            <BackToHome />
+            <CocktailBuilder />
           </>
         }
       />

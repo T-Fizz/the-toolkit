@@ -152,6 +152,24 @@ export const PAIR_AFFINITIES = Object.freeze(Object.fromEntries([
   ["egg", "muffin", 3],
   ["egg", "sharp_cheddar", 2],
   ["egg", "havarti", 2],
+  // Freshness pairings (arugula/tomato cut through fat-heavy builds)
+  ["arugula", "prosciutto", 3],
+  ["arugula", "pesto", 2],
+  ["arugula", "goat_cheese", 2],
+  ["arugula", "aioli", 2],
+  ["arugula", "mozzarella", 2],
+  ["arugula", "parmigiano", 2],
+  ["tomato", "arugula", 2],
+  ["tomato", "aioli", 2],
+  ["tomato", "provolone", 2],
+  ["avocado", "bacon", 3],
+  ["avocado", "chicken", 2],
+  ["avocado", "turkey", 2],
+  ["avocado", "pepper_jack", 2],
+  ["lettuce", "turkey", 1],
+  ["lettuce", "bacon", 1],
+  ["pickled_red_onion", "shaved_steak", 2],
+  ["pickled_red_onion", "turkey", 2],
   // Lemon garlic bright builds
   ["lemon_garlic", "capers", 3],
   ["lemon_garlic", "arugula", 2],
@@ -228,6 +246,7 @@ export const PAIR_AFFINITIES = Object.freeze(Object.fromEntries([
   ["pepperoni", "goat_cheese", -3],
   ["pepperoni", "feta", -3],
   ["pepperoni", "croissant", -3],
+  ["prosciutto", "bacon", -3],     // redundant cured pork; bacon overwhelms delicate prosciutto
   ["prosciutto", "bbq", -3],
   ["prosciutto", "buffalo", -3],
   ["prosciutto", "ranch", -3],
@@ -493,11 +512,18 @@ export function findClashReason(catId, itemId, selections) {
 }
 
 // ── SUGGEST NEXT ─────────────────────────────────────────────────────
-// Return the top N ingredients (by positive-score delta) that would improve
-// the current selection without getting blocked.
+// Return top N ingredients (by positive-score delta) that would improve the
+// current selection without getting blocked. Diversified: at most one item
+// per category, and we favor items that fill under-represented flavor axes
+// (e.g. recommend arugula when a sandwich is fatty-heavy with no freshness).
+const LOW_AXIS_THRESHOLD = 2;                                                           // an axis below this is "under-represented"
+const BALANCE_BONUS = 1.5;                                                               // bonus per under-represented axis an item raises
 export function suggestNext(selections, n = 3) {
   const selectedIdSet = new Set(selectedIds(selections));
   const current = scoreFixed(selections);
+  const currentProfile = getFlavorProfile(selections);
+  const lowAxes = new Set(AXES.filter((a) => currentProfile[a] < LOW_AXIS_THRESHOLD));
+
   const candidates = [];
   for (const [id, ing] of Object.entries(INGREDIENTS)) {
     if (ing.role === "null_choice") continue;
@@ -506,11 +532,31 @@ export function suggestNext(selections, n = 3) {
     const { blocked } = evaluate(hypothetical, id);
     if (blocked) continue;
     const after = scoreFixed(hypothetical);
-    const delta = after - current;
+    let delta = after - current;
+    // Bonus for raising an under-represented axis
+    for (const axis of lowAxes) {
+      if ((ing.flavor?.[axis] ?? 0) >= 2) delta += BALANCE_BONUS;
+    }
     if (delta > 0) candidates.push({ id, label: ing.label, cat: ing.cat, delta });
   }
   candidates.sort((a, b) => b.delta - a.delta);
-  return candidates.slice(0, n);
+
+  // Diversify: at most one item per category until we have n suggestions;
+  // if not enough categories represented, fall through to raw order.
+  const picked = [];
+  const seenCats = new Set();
+  for (const c of candidates) {
+    if (picked.length >= n) break;
+    if (seenCats.has(c.cat)) continue;
+    picked.push(c);
+    seenCats.add(c.cat);
+  }
+  // If we still have slots left, fill with best remaining (even same category)
+  for (const c of candidates) {
+    if (picked.length >= n) break;
+    if (!picked.includes(c)) picked.push(c);
+  }
+  return picked;
 }
 
 // A simple positive-only score for suggestion ranking: sum of pair affinities
